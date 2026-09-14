@@ -27,6 +27,7 @@ from cat_treaty.shares import (
     calculate_share_factor,
     scale_payable_capacity,
 )
+from cat_treaty.settlement import calculate_settlement
 
 __version__ = "0.1.0"
 
@@ -49,6 +50,7 @@ __all__ = [
     "adapt_event_records",
     "apply_contractual_shares",
     "build_run_metadata",
+    "calculate_settlement",
     "calculate_share_factor",
     "scale_payable_capacity",
 ]

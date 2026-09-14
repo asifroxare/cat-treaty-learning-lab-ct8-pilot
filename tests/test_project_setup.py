@@ -26,6 +26,7 @@ def test_ct1_public_package_exports() -> None:
         "adapt_event_records",
         "apply_contractual_shares",
         "build_run_metadata",
+        "calculate_settlement",
         "calculate_share_factor",
         "scale_payable_capacity",
     }
