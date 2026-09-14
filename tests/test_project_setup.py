@@ -24,7 +24,10 @@ def test_ct1_public_package_exports() -> None:
         "RunMetadata",
         "adapt_event_record",
         "adapt_event_records",
+        "apply_contractual_shares",
         "build_run_metadata",
+        "calculate_share_factor",
+        "scale_payable_capacity",
     }
 
     assert expected_exports.issubset(set(cat_treaty.__all__))

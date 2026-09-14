@@ -22,6 +22,11 @@ from cat_treaty.models import (
     SettlementMode,
     TreatyShares,
 )
+from cat_treaty.shares import (
+    apply_contractual_shares,
+    calculate_share_factor,
+    scale_payable_capacity,
+)
 
 __version__ = "0.1.0"
 
@@ -42,5 +47,8 @@ __all__ = [
     "__version__",
     "adapt_event_record",
     "adapt_event_records",
+    "apply_contractual_shares",
     "build_run_metadata",
+    "calculate_share_factor",
+    "scale_payable_capacity",
 ]
