@@ -72,6 +72,7 @@ class TreatyShares:
                 value,
                 non_negative=True,
             )
+
             if value > 1:
                 raise ValueError(
                     f"{field_name} must lie in the closed interval [0, 1]"
@@ -87,6 +88,9 @@ class CanonicalEvent:
     event_time: float
     event_sequence: int
     subject_loss: float
+    peril: str = "unspecified"
+    region: str = "unspecified"
+    risks_affected: int = 0
 
     def __post_init__(self) -> None:
         _validate_positive_integer(
@@ -100,6 +104,21 @@ class CanonicalEvent:
 
         if not isinstance(self.event_id, str) or not self.event_id.strip():
             raise ValueError("event_id must be a non-empty string")
+
+        if not isinstance(self.peril, str) or not self.peril.strip():
+            raise ValueError("peril must be a non-empty string")
+
+        if not isinstance(self.region, str) or not self.region.strip():
+            raise ValueError("region must be a non-empty string")
+
+        if (
+            isinstance(self.risks_affected, bool)
+            or not isinstance(self.risks_affected, int)
+            or self.risks_affected < 0
+        ):
+            raise ValueError(
+                "risks_affected must be a non-negative integer"
+            )
 
         _validate_finite_number(
             "event_time",

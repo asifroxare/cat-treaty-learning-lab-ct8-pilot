@@ -1,5 +1,10 @@
 """EdInsured Catastrophe Treaty Learning Lab."""
 
+from cat_treaty.adapter import (
+    PricingEventRecord,
+    adapt_event_record,
+    adapt_event_records,
+)
 from cat_treaty.metadata import (
     ENGINE_VERSION,
     PRODUCT_ID,
@@ -28,11 +33,14 @@ __all__ = [
     "ENGINE_VERSION",
     "PRODUCT_ID",
     "PRODUCT_ROUTE",
+    "PricingEventRecord",
     "RunMetadata",
     "SCHEMA_VERSION",
     "SettlementBreakdown",
     "SettlementMode",
     "TreatyShares",
     "__version__",
+    "adapt_event_record",
+    "adapt_event_records",
     "build_run_metadata",
 ]

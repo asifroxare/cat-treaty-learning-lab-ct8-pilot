@@ -19,8 +19,11 @@ def test_ct1_public_package_exports() -> None:
         "ENGINE_VERSION",
         "PRODUCT_ID",
         "PRODUCT_ROUTE",
+        "PricingEventRecord",
         "SCHEMA_VERSION",
         "RunMetadata",
+        "adapt_event_record",
+        "adapt_event_records",
         "build_run_metadata",
     }
 
