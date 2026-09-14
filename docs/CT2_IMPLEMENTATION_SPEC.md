@@ -1,8 +1,8 @@
 # Catastrophe Treaty Learning Lab — CT2 Implementation Specification
 
 **Milestone:** CT2 — Ultimate Net Loss and Ordered Inuring  
-**Version:** 1.0  
-**Status:** Proposed for independent validation  
+**Version:** 1.1
+**Status:** Frozen following independent validation
 **Date:** 14 September 2026  
 **Product:** EdInsured Catastrophe Treaty Learning Lab
 
@@ -134,6 +134,14 @@ Every configured cover contains:
 All covers in one waterfall use the same reporting currency. Currency
 conversion remains outside CT2 and must occur before the request.
 
+CT2 treats `aggregate_remaining_before` as a state snapshot supplied for this
+occurrence; it does not persist or infer aggregate state across occurrences.
+When that field is present, the cover row returns
+`aggregate_remaining_after = aggregate_remaining_before - payable_recovery`.
+When it is omitted, both aggregate fields are `null` and the aggregate
+constraint is unbounded. CT3/CT5 owns chronological carryover of this returned
+state into later occurrences.
+
 ### 7.2 Permitted valuation modes
 
 `calculated_proportional` is permitted only where the contract owner declares
@@ -239,6 +247,7 @@ CT2 waterfall is required.
 The CT2 response contains:
 
 - occurrence identity and source-stage declaration;
+- `reporting_currency` for the occurrence and every monetary result;
 - optional ground-up provenance;
 - initial insured loss;
 - all UNL components and applied effects;
@@ -267,7 +276,8 @@ not free-form actuarial conclusions.
   cession rate;
 - supplied recovery cannot exceed declared cover subject loss;
 - limits, when present, are strictly positive except aggregate remaining may be
-  zero;
+  zero; an included or excluded component with a negative supplied amount is
+  invalid because exclusion changes applied effect, not input validity;
 - all currencies match the occurrence reporting currency;
 - output losses and recoveries are finite and non-negative; and
 - reconciliation uses the project's declared floating-point tolerance and
@@ -286,7 +296,7 @@ Existing G01–G16 retain their frozen meanings and IDs.
 | G20 | Order sensitivity | Reversing two valid covers creates a disclosed alternative result; engine never chooses the better order |
 | G21 | Binding limit | Recovery is capped and the exact occurrence or aggregate constraint is named |
 | G22 | Supplied recovery | Authoritative supplied amount is preserved subject to scope/current-loss caps |
-| G23 | Out-of-scope cover | Zero subject, zero recovery and unchanged outgoing loss remain visible |
+| G23 | Out-of-scope cover | Zero subject, zero recovery and unchanged outgoing loss remain visible; supplied mode with zero scope and nonzero recovery fails validation |
 | G24 | Duplicate recovery source | Request fails before any completed subject loss is emitted |
 | G25 | Negative UNL attempt | Excess deductions fail explicitly; result is not silently floored |
 
@@ -316,7 +326,7 @@ Existing G01–G16 retain their frozen meanings and IDs.
 | `cat_treaty/ct2_models.py` | Immutable CT2 enums, inputs, rows and result types |
 | `cat_treaty/ct2_metadata.py` | CT2 schema/engine identity and normalized hash |
 | `tests/test_ct2_loss_basis.py` | F03/F04 and validation |
-| `tests/test_ct2_inuring.py` | F05–F09, ordering, limits and modes |
+| `tests/test_ct2_inuring.py` | F05–F09, ordering, limits, modes, aggregate-before/after state, and supplied-mode zero-scope rejection |
 | `tests/test_ct2_golden_cases.py` | G06 and G17–G25 traceability |
 | `tests/test_ct2_boundaries.py` | Import, completion and CT1 regression boundaries |
 
@@ -353,4 +363,3 @@ The independent reviewer should answer explicitly:
 
 Approval freezes formulas F03–F09, milestone boundaries, golden-case IDs and
 validation behavior. Any later actuarial change requires a versioned review.
-
