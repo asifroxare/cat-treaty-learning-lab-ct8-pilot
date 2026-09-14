@@ -63,4 +63,5 @@ in CT2.
 - Dependency integrity: no broken requirements.
 - Python compilation: passed.
 - Import and absolute-path boundaries: passed.
-- Package extraction and independent rerun: required before delivery.
+- Package extraction, isolated source import and independent rerun: passed
+  before delivery.
