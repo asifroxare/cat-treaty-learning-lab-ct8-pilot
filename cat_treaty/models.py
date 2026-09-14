@@ -367,3 +367,196 @@ class CanonicalProcessedEvent:
                 raise ValueError(
                     "settlement premium must match event premium"
                 )
+
+
+@dataclass(frozen=True, slots=True)
+class CanonicalYearRecord:
+    """Canonical CT1 payable view of one annual pricing-engine record."""
+
+    annual_trial_id: int
+    event_count: int
+    qualifying_event_count: int
+    gross_annual_loss: float
+    largest_gross_event_loss: float
+    gross_contractual_recovery: float
+    net_subject_loss: float
+    reinstatements_used: float
+    maximum_occurrence_recovery: float
+    layer_attached: bool
+    layer_exhausted: bool
+    reinstatement_premium_payable: float | None
+    settlement: SettlementBreakdown | None
+    capacity_basis: CapacityBasis = CapacityBasis.PAYABLE_PLACED_SHARE
+
+    def __post_init__(self) -> None:
+        _validate_positive_integer("annual_trial_id", self.annual_trial_id)
+        for field_name, value in (
+            ("event_count", self.event_count),
+            ("qualifying_event_count", self.qualifying_event_count),
+        ):
+            if isinstance(value, bool) or not isinstance(value, int) or value < 0:
+                raise ValueError(f"{field_name} must be a non-negative integer")
+
+        if self.qualifying_event_count > self.event_count:
+            raise ValueError(
+                "qualifying_event_count cannot exceed event_count"
+            )
+
+        for field_name, value in (
+            ("gross_annual_loss", self.gross_annual_loss),
+            ("largest_gross_event_loss", self.largest_gross_event_loss),
+            (
+                "gross_contractual_recovery",
+                self.gross_contractual_recovery,
+            ),
+            ("net_subject_loss", self.net_subject_loss),
+            ("reinstatements_used", self.reinstatements_used),
+            (
+                "maximum_occurrence_recovery",
+                self.maximum_occurrence_recovery,
+            ),
+        ):
+            _validate_finite_number(field_name, value, non_negative=True)
+
+        if not isinstance(self.layer_attached, bool):
+            raise ValueError("layer_attached must be boolean")
+        if not isinstance(self.layer_exhausted, bool):
+            raise ValueError("layer_exhausted must be boolean")
+        if self.capacity_basis is not CapacityBasis.PAYABLE_PLACED_SHARE:
+            raise ValueError(
+                "capacity_basis must be payable_placed_share in CT1"
+            )
+
+        if self.reinstatement_premium_payable is not None:
+            _validate_finite_number(
+                "reinstatement_premium_payable",
+                self.reinstatement_premium_payable,
+                non_negative=True,
+            )
+
+        if self.reinstatement_premium_payable is None:
+            if self.settlement is not None:
+                raise ValueError(
+                    "settlement must be null until premium is finalized"
+                )
+        elif not isinstance(self.settlement, SettlementBreakdown):
+            raise ValueError(
+                "finalized annual premium requires SettlementBreakdown"
+            )
+
+
+@dataclass(frozen=True, slots=True)
+class CanonicalPricingComponents:
+    """Identity view of the validated technical-pricing components."""
+
+    pure_premium: float
+    risk_loading: float
+    expense_loading: float
+    capital_loading: float
+    pre_profit_subtotal: float
+    profit_loading: float
+    original_technical_premium: float
+
+    def __post_init__(self) -> None:
+        for field_name in self.__dataclass_fields__:
+            _validate_finite_number(
+                field_name, getattr(self, field_name), non_negative=True
+            )
+
+
+@dataclass(frozen=True, slots=True)
+class CanonicalPremiumMetrics:
+    """Identity view of one original or expected-all-in premium basis."""
+
+    premium: float
+    rate_on_line: float
+    payback_period: float | None
+    expected_loss_ratio: float | None
+    commercial_rate_on_epi: float | None
+
+    def __post_init__(self) -> None:
+        _validate_finite_number("premium", self.premium, non_negative=True)
+        _validate_finite_number(
+            "rate_on_line", self.rate_on_line, non_negative=True
+        )
+        for field_name in (
+            "payback_period",
+            "expected_loss_ratio",
+            "commercial_rate_on_epi",
+        ):
+            value = getattr(self, field_name)
+            if value is not None:
+                _validate_finite_number(
+                    field_name, value, non_negative=True
+                )
+
+
+@dataclass(frozen=True, slots=True)
+class CanonicalPricingView:
+    """Original-premium and expected-all-in pricing metrics."""
+
+    name: str
+    original: CanonicalPremiumMetrics
+    expected_reinstatement_premium: float
+    expected_all_in: CanonicalPremiumMetrics
+    reinstatement_premium_basis: str
+
+    def __post_init__(self) -> None:
+        if not isinstance(self.name, str) or not self.name.strip():
+            raise ValueError("pricing view name must be non-empty")
+        if not isinstance(self.original, CanonicalPremiumMetrics):
+            raise ValueError("original must be CanonicalPremiumMetrics")
+        if not isinstance(self.expected_all_in, CanonicalPremiumMetrics):
+            raise ValueError(
+                "expected_all_in must be CanonicalPremiumMetrics"
+            )
+        if (
+            not isinstance(self.reinstatement_premium_basis, str)
+            or not self.reinstatement_premium_basis.strip()
+        ):
+            raise ValueError(
+                "reinstatement_premium_basis must be non-empty"
+            )
+        _validate_finite_number(
+            "expected_reinstatement_premium",
+            self.expected_reinstatement_premium,
+            non_negative=True,
+        )
+
+
+@dataclass(frozen=True, slots=True)
+class CanonicalPricingResult:
+    """Numerical-identity snapshot of validated 100% layer pricing."""
+
+    components: CanonicalPricingComponents
+    expected_reinstatement_premium: float
+    expected_all_in_premium: float
+    technical: CanonicalPricingView
+    target_rol: CanonicalPricingView | None
+    target_payback: CanonicalPricingView | None
+
+    def __post_init__(self) -> None:
+        if not isinstance(self.components, CanonicalPricingComponents):
+            raise ValueError(
+                "components must be CanonicalPricingComponents"
+            )
+        if not isinstance(self.technical, CanonicalPricingView):
+            raise ValueError("technical must be CanonicalPricingView")
+        for field_name in ("target_rol", "target_payback"):
+            value = getattr(self, field_name)
+            if value is not None and not isinstance(
+                value, CanonicalPricingView
+            ):
+                raise ValueError(
+                    f"{field_name} must be CanonicalPricingView or null"
+                )
+        _validate_finite_number(
+            "expected_reinstatement_premium",
+            self.expected_reinstatement_premium,
+            non_negative=True,
+        )
+        _validate_finite_number(
+            "expected_all_in_premium",
+            self.expected_all_in_premium,
+            non_negative=True,
+        )

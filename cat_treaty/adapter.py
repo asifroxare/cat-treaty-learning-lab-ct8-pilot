@@ -7,7 +7,12 @@ from typing import Protocol
 
 from cat_treaty.models import (
     CanonicalEvent,
+    CanonicalPremiumMetrics,
+    CanonicalPricingComponents,
+    CanonicalPricingResult,
+    CanonicalPricingView,
     CanonicalProcessedEvent,
+    CanonicalYearRecord,
     SettlementMode,
     TreatyShares,
 )
@@ -47,6 +52,23 @@ class PricingProcessedEventRecord(PricingEventRecord, Protocol):
     net_event_loss: float
 
 
+class PricingTreatyYearRecord(Protocol):
+    """Structural contract matching cat_xol.models.TreatyYearRecord."""
+
+    year: int
+    event_count: int
+    qualifying_event_count: int
+    gross_annual_loss: float
+    largest_gross_event_loss: float
+    total_annual_recovery: float
+    net_annual_loss: float
+    reinstatements_used: float
+    total_reinstatement_premium: float | None
+    maximum_occurrence_recovery: float
+    layer_attached: bool
+    layer_exhausted: bool
+
+
 _REQUIRED_EVENT_FIELDS = (
     "year",
     "event_id",
@@ -70,6 +92,21 @@ _REQUIRED_PROCESSED_FIELDS = (
     "capacity_available_for_next_event",
     "reinstatements_remaining",
     "net_event_loss",
+)
+
+_REQUIRED_YEAR_FIELDS = (
+    "year",
+    "event_count",
+    "qualifying_event_count",
+    "gross_annual_loss",
+    "largest_gross_event_loss",
+    "total_annual_recovery",
+    "net_annual_loss",
+    "reinstatements_used",
+    "total_reinstatement_premium",
+    "maximum_occurrence_recovery",
+    "layer_attached",
+    "layer_exhausted",
 )
 
 
@@ -287,4 +324,263 @@ def adapt_processed_event_record(
         net_subject_loss=event.subject_loss - gross_recovery,
         reinstatement_premium_payable=premium_payable,
         settlement=settlement,
+    )
+
+
+def _non_negative_integer(field_name: str, value: object) -> int:
+    if isinstance(value, bool) or not isinstance(value, int) or value < 0:
+        raise ValueError(f"{field_name} must be a non-negative integer")
+    return value
+
+
+def adapt_treaty_year_record(
+    source: PricingTreatyYearRecord,
+    *,
+    shares: TreatyShares = TreatyShares(),
+    settlement_mode: SettlementMode = SettlementMode.PAID_SEPARATELY,
+) -> CanonicalYearRecord:
+    """Adapt one annual source record to a canonical payable-share view."""
+
+    if not isinstance(settlement_mode, SettlementMode):
+        raise ValueError(
+            "settlement_mode must be a supported SettlementMode"
+        )
+
+    values = {
+        field_name: _required_field(source, field_name)
+        for field_name in _REQUIRED_YEAR_FIELDS
+    }
+
+    year = values["year"]
+    if isinstance(year, bool) or not isinstance(year, int) or year < 1:
+        raise ValueError("year must be a positive integer")
+
+    event_count = _non_negative_integer(
+        "event_count", values["event_count"]
+    )
+    qualifying_count = _non_negative_integer(
+        "qualifying_event_count", values["qualifying_event_count"]
+    )
+    if qualifying_count > event_count:
+        raise ValueError(
+            "qualifying_event_count cannot exceed event_count"
+        )
+
+    gross_loss = _non_negative_finite(
+        "gross_annual_loss", values["gross_annual_loss"]
+    )
+    largest_loss = _non_negative_finite(
+        "largest_gross_event_loss", values["largest_gross_event_loss"]
+    )
+    source_recovery = _non_negative_finite(
+        "total_annual_recovery", values["total_annual_recovery"]
+    )
+    source_net = _non_negative_finite(
+        "net_annual_loss", values["net_annual_loss"]
+    )
+    reinstatements_used = _non_negative_finite(
+        "reinstatements_used", values["reinstatements_used"]
+    )
+    maximum_recovery = _non_negative_finite(
+        "maximum_occurrence_recovery",
+        values["maximum_occurrence_recovery"],
+    )
+
+    if largest_loss > gross_loss:
+        raise ValueError(
+            "largest_gross_event_loss cannot exceed gross_annual_loss"
+        )
+    if maximum_recovery > source_recovery:
+        raise ValueError(
+            "maximum_occurrence_recovery cannot exceed total_annual_recovery"
+        )
+    _require_close(
+        "net_annual_loss", source_net, gross_loss - source_recovery
+    )
+
+    layer_attached = values["layer_attached"]
+    layer_exhausted = values["layer_exhausted"]
+    if not isinstance(layer_attached, bool):
+        raise ValueError("layer_attached must be boolean")
+    if not isinstance(layer_exhausted, bool):
+        raise ValueError("layer_exhausted must be boolean")
+
+    factor = calculate_share_factor(shares)
+    payable_recovery = apply_contractual_shares(source_recovery, shares)
+    source_premium = values["total_reinstatement_premium"]
+
+    if source_premium is None:
+        premium_payable = None
+        settlement = None
+    else:
+        validated_premium = _non_negative_finite(
+            "total_reinstatement_premium", source_premium
+        )
+        premium_payable = apply_contractual_shares(
+            validated_premium, shares
+        )
+        settlement = calculate_settlement(
+            gross_contractual_recovery=payable_recovery,
+            reinstatement_premium_payable=premium_payable,
+            settlement_mode=settlement_mode,
+        )
+
+    return CanonicalYearRecord(
+        annual_trial_id=year,
+        event_count=event_count,
+        qualifying_event_count=qualifying_count,
+        gross_annual_loss=gross_loss,
+        largest_gross_event_loss=largest_loss,
+        gross_contractual_recovery=payable_recovery,
+        net_subject_loss=gross_loss - payable_recovery,
+        reinstatements_used=reinstatements_used,
+        maximum_occurrence_recovery=maximum_recovery * factor,
+        layer_attached=layer_attached,
+        layer_exhausted=layer_exhausted,
+        reinstatement_premium_payable=premium_payable,
+        settlement=settlement,
+    )
+
+
+def _adapt_pricing_components(source: object) -> CanonicalPricingComponents:
+    names = (
+        "pure_premium",
+        "risk_loading",
+        "expense_loading",
+        "capital_loading",
+        "pre_profit_subtotal",
+        "profit_loading",
+        "original_technical_premium",
+    )
+    values = {
+        name: _non_negative_finite(name, _required_field(source, name))
+        for name in names
+    }
+    return CanonicalPricingComponents(**values)
+
+
+def _optional_non_negative(field_name: str, value: object) -> float | None:
+    if value is None:
+        return None
+    return _non_negative_finite(field_name, value)
+
+
+def _adapt_premium_metrics(source: object) -> CanonicalPremiumMetrics:
+    return CanonicalPremiumMetrics(
+        premium=_non_negative_finite(
+            "premium", _required_field(source, "premium")
+        ),
+        rate_on_line=_non_negative_finite(
+            "rate_on_line", _required_field(source, "rate_on_line")
+        ),
+        payback_period=_optional_non_negative(
+            "payback_period", _required_field(source, "payback_period")
+        ),
+        expected_loss_ratio=_optional_non_negative(
+            "expected_loss_ratio",
+            _required_field(source, "expected_loss_ratio"),
+        ),
+        commercial_rate_on_epi=_optional_non_negative(
+            "commercial_rate_on_epi",
+            _required_field(source, "commercial_rate_on_epi"),
+        ),
+    )
+
+
+def _adapt_pricing_view(source: object) -> CanonicalPricingView:
+    name = _required_field(source, "name")
+    if not isinstance(name, str) or not name.strip():
+        raise ValueError("pricing view name must be non-empty")
+    premium_basis = _required_field(
+        source, "reinstatement_premium_basis"
+    )
+    if not isinstance(premium_basis, str) or not premium_basis.strip():
+        raise ValueError(
+            "reinstatement_premium_basis must be non-empty"
+        )
+
+    original = _adapt_premium_metrics(_required_field(source, "original"))
+    expected_reinstatement = _non_negative_finite(
+        "expected_reinstatement_premium",
+        _required_field(source, "expected_reinstatement_premium"),
+    )
+    expected_all_in = _adapt_premium_metrics(
+        _required_field(source, "expected_all_in")
+    )
+    _require_close(
+        "expected_all_in premium",
+        expected_all_in.premium,
+        original.premium + expected_reinstatement,
+    )
+
+    return CanonicalPricingView(
+        name=name,
+        original=original,
+        expected_reinstatement_premium=expected_reinstatement,
+        expected_all_in=expected_all_in,
+        reinstatement_premium_basis=premium_basis,
+    )
+
+
+def adapt_pricing_result(source: object) -> CanonicalPricingResult:
+    """Map the validated 100% pricing result without repricing."""
+
+    required = (
+        "components",
+        "expected_reinstatement_premium",
+        "expected_all_in_premium",
+        "technical",
+        "target_rol",
+        "target_payback",
+    )
+    values = {name: _required_field(source, name) for name in required}
+
+    components = _adapt_pricing_components(values["components"])
+    expected_reinstatement = _non_negative_finite(
+        "expected_reinstatement_premium",
+        values["expected_reinstatement_premium"],
+    )
+    expected_all_in = _non_negative_finite(
+        "expected_all_in_premium", values["expected_all_in_premium"]
+    )
+    technical = _adapt_pricing_view(values["technical"])
+    target_rol = (
+        None
+        if values["target_rol"] is None
+        else _adapt_pricing_view(values["target_rol"])
+    )
+    target_payback = (
+        None
+        if values["target_payback"] is None
+        else _adapt_pricing_view(values["target_payback"])
+    )
+
+    _require_close(
+        "expected_all_in_premium",
+        expected_all_in,
+        components.original_technical_premium + expected_reinstatement,
+    )
+    _require_close(
+        "technical original premium",
+        technical.original.premium,
+        components.original_technical_premium,
+    )
+    _require_close(
+        "technical expected_reinstatement_premium",
+        technical.expected_reinstatement_premium,
+        expected_reinstatement,
+    )
+    _require_close(
+        "technical expected_all_in",
+        technical.expected_all_in.premium,
+        expected_all_in,
+    )
+
+    return CanonicalPricingResult(
+        components=components,
+        expected_reinstatement_premium=expected_reinstatement,
+        expected_all_in_premium=expected_all_in,
+        technical=technical,
+        target_rol=target_rol,
+        target_payback=target_payback,
     )
