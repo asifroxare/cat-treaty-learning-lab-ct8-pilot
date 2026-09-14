@@ -12,6 +12,8 @@ def test_ct1_public_package_exports() -> None:
         "CapacityBasis",
         "CapacityState",
         "CapacityUtilizationStatus",
+        "CompatibilityMode",
+        "CompatibilityResolution",
         "CanonicalEvent",
         "CanonicalProcessedEvent",
         "CanonicalPremiumMetrics",
@@ -23,6 +25,7 @@ def test_ct1_public_package_exports() -> None:
         "SettlementMode",
         "TreatyShares",
         "ENGINE_VERSION",
+        "LEGACY_PRICING_API_VERSION",
         "PRODUCT_ID",
         "PRODUCT_ROUTE",
         "PricingEventRecord",
@@ -40,6 +43,7 @@ def test_ct1_public_package_exports() -> None:
         "calculate_settlement",
         "calculate_share_factor",
         "scale_payable_capacity",
+        "resolve_compatibility_request",
     }
 
     assert expected_exports.issubset(set(cat_treaty.__all__))

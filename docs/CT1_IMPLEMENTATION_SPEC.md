@@ -1,7 +1,7 @@
 # Catastrophe Treaty Learning Lab — CT1 Implementation Specification
 
 **Milestone:** CT1 — Compatibility and Shared Engine Freeze  
-**Version:** 1.0  
+**Version:** 1.1
 **Status:** Approved implementation specification  
 **Date:** 14 September 2026  
 **Product:** EdInsured Catastrophe Treaty Learning Lab
@@ -71,7 +71,7 @@ CT1 must:
 | `tests/test_ct1_shares.py` | Share, capacity and zero-capacity checks |
 | `tests/test_ct1_settlement.py` | Settlement invariants |
 | `tests/test_ct1_metadata.py` | Version and hash checks |
-| `tests/test_ct1_golden_cases.py` | G01–G15 traceability |
+| `tests/test_ct1_golden_cases.py` | G01–G16 traceability |
 
 ## 5. Explicit exclusions
 
@@ -237,11 +237,11 @@ The input hash must:
 
 ### 14.1 Existing cases
 
-G01–G12 remain authoritative exactly as defined in the CT0 Frozen Specification. CT1 tests must reference those IDs and must not redefine or renumber them.
+G01–G13 remain authoritative exactly as defined in the CT0 Frozen Specification. CT1 tests must reference those IDs and must not redefine or renumber them.
 
 ### 14.2 CT1 traceability additions
 
-**G13 — Two-event proportional equivalence**
+**G14 — Two-event proportional equivalence**
 
 - One annual trial contains two chronologically ordered events.
 - Both events use one fixed non-default `ceded_share` and `placement_share`.
@@ -249,13 +249,13 @@ G01–G12 remain authoritative exactly as defined in the CT0 Frozen Specificatio
 - The payable-basis recovery, consumption, reinstatement and remaining capacity must equal each corresponding 100%-basis value multiplied by the constant share product.
 - The defined nonzero utilization fraction must be identical on both bases.
 
-**G14 — Zero ceded share**
+**G15 — Zero ceded share**
 
 - `ceded_share = 0`, `placement_share = 1`.
 - All payable recovery and capacity values are zero.
 - Utilization is `null` with status `not_applicable_zero_capacity`.
 
-**G15 — Zero placement share**
+**G16 — Zero placement share**
 
 - `ceded_share = 1`, `placement_share = 0`.
 - All payable recovery and capacity values are zero.
@@ -270,8 +270,8 @@ G01–G12 remain authoritative exactly as defined in the CT0 Frozen Specificatio
 | Recovery identity | Default shares reproduce existing `actual_treaty_recovery` exactly |
 | Share calculations | All six F02 combinations reconcile independently |
 | Capacity basis | Capacity ledger reconciles on `payable_placed_share` |
-| G13 | Two-event proportional equivalence passes |
-| G14–G15 | Zero-capacity convention passes without NaN, infinity, error or false 0% |
+| G14 | Two-event proportional equivalence passes |
+| G15–G16 | Zero-capacity convention passes without NaN, infinity, error or false 0% |
 | Pricing identity | Layer AAL, technical premium, ROL, payback and expected reinstatement premium remain unchanged under defaults |
 | Settlement invariant | Presentation mode changes only `net_cash_settlement` |
 | Metadata | Versions and normalized input hashes are stable and disclosed |
@@ -301,7 +301,7 @@ For every valid CT1 result:
 4. Implement the numerical-identity compatibility adapter.
 5. Implement functional shares and payable capacity scaling.
 6. Implement settlement presentation.
-7. Add G01–G15 traceability and regression tests.
+7. Add G01–G16 traceability and regression tests.
 8. Run the new treaty suite and the reproduced pricing regression suite.
 9. Record results and commit CT1.
 

@@ -1,5 +1,11 @@
 """EdInsured Catastrophe Treaty Learning Lab."""
 
+from cat_treaty.compatibility import (
+    LEGACY_PRICING_API_VERSION,
+    CompatibilityMode,
+    CompatibilityResolution,
+    resolve_compatibility_request,
+)
 from cat_treaty.adapter import (
     PricingEventRecord,
     PricingProcessedEventRecord,
@@ -46,6 +52,8 @@ __all__ = [
     "CapacityBasis",
     "CapacityState",
     "CapacityUtilizationStatus",
+    "CompatibilityMode",
+    "CompatibilityResolution",
     "CanonicalEvent",
     "CanonicalProcessedEvent",
     "CanonicalPremiumMetrics",
@@ -54,6 +62,7 @@ __all__ = [
     "CanonicalPricingView",
     "CanonicalYearRecord",
     "ENGINE_VERSION",
+    "LEGACY_PRICING_API_VERSION",
     "PRODUCT_ID",
     "PRODUCT_ROUTE",
     "PricingEventRecord",
@@ -75,4 +84,5 @@ __all__ = [
     "calculate_settlement",
     "calculate_share_factor",
     "scale_payable_capacity",
+    "resolve_compatibility_request",
 ]
