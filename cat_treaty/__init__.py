@@ -40,6 +40,10 @@ from cat_treaty.metadata import (
     RunMetadata,
     build_run_metadata,
 )
+from cat_treaty.loss_basis import (
+    build_loss_basis,
+    verify_loss_basis_reconciliation,
+)
 from cat_treaty.models import (
     CapacityBasis,
     CapacityState,
@@ -110,9 +114,11 @@ __all__ = [
     "adapt_processed_event_record",
     "adapt_treaty_year_record",
     "apply_contractual_shares",
+    "build_loss_basis",
     "build_run_metadata",
     "calculate_settlement",
     "calculate_share_factor",
     "scale_payable_capacity",
     "resolve_compatibility_request",
+    "verify_loss_basis_reconciliation",
 ]
