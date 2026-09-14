@@ -22,6 +22,15 @@ from cat_treaty.ct2_models import (
     LossComponentCategory,
     ReconciliationCheck,
 )
+from cat_treaty.ct2_metadata import (
+    CT2_ENGINE_VERSION,
+    CT2_SCHEMA_VERSION,
+    CT2RunMetadata,
+    build_ct2_run_metadata,
+    canonicalize_ct2_inputs,
+    serialize_ct2_inputs,
+)
+from cat_treaty.completion import require_ct3_eligible_waterfall
 from cat_treaty.adapter import (
     PricingEventRecord,
     PricingProcessedEventRecord,
@@ -76,6 +85,9 @@ __all__ = [
     "CapacityUtilizationStatus",
     "CompatibilityMode",
     "CompatibilityResolution",
+    "CT2_ENGINE_VERSION",
+    "CT2_SCHEMA_VERSION",
+    "CT2RunMetadata",
     "ExplanationFact",
     "CanonicalEvent",
     "CanonicalProcessedEvent",
@@ -117,10 +129,14 @@ __all__ = [
     "apply_contractual_shares",
     "apply_inuring_waterfall",
     "build_loss_basis",
+    "build_ct2_run_metadata",
+    "canonicalize_ct2_inputs",
     "build_run_metadata",
     "calculate_settlement",
     "calculate_share_factor",
     "scale_payable_capacity",
     "resolve_compatibility_request",
+    "require_ct3_eligible_waterfall",
+    "serialize_ct2_inputs",
     "verify_loss_basis_reconciliation",
 ]

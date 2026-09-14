@@ -15,6 +15,9 @@ def test_ct1_public_package_exports() -> None:
         "BindingConstraint",
         "CompatibilityMode",
         "CompatibilityResolution",
+        "CT2_ENGINE_VERSION",
+        "CT2_SCHEMA_VERSION",
+        "CT2RunMetadata",
         "ExplanationFact",
         "CanonicalEvent",
         "CanonicalProcessedEvent",
@@ -55,12 +58,16 @@ def test_ct1_public_package_exports() -> None:
         "apply_contractual_shares",
         "apply_inuring_waterfall",
         "build_loss_basis",
+        "build_ct2_run_metadata",
+        "canonicalize_ct2_inputs",
         "build_run_metadata",
         "calculate_settlement",
         "calculate_share_factor",
         "scale_payable_capacity",
         "verify_loss_basis_reconciliation",
         "resolve_compatibility_request",
+        "require_ct3_eligible_waterfall",
+        "serialize_ct2_inputs",
     }
 
     assert expected_exports.issubset(set(cat_treaty.__all__))
