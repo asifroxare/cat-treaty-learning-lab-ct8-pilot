@@ -53,6 +53,7 @@ def test_ct1_public_package_exports() -> None:
         "adapt_processed_event_record",
         "adapt_treaty_year_record",
         "apply_contractual_shares",
+        "apply_inuring_waterfall",
         "build_loss_basis",
         "build_run_metadata",
         "calculate_settlement",
