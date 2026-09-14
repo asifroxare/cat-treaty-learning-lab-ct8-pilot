@@ -2,8 +2,10 @@
 
 from cat_treaty.adapter import (
     PricingEventRecord,
+    PricingProcessedEventRecord,
     adapt_event_record,
     adapt_event_records,
+    adapt_processed_event_record,
 )
 from cat_treaty.metadata import (
     ENGINE_VERSION,
@@ -18,6 +20,7 @@ from cat_treaty.models import (
     CapacityState,
     CapacityUtilizationStatus,
     CanonicalEvent,
+    CanonicalProcessedEvent,
     SettlementBreakdown,
     SettlementMode,
     TreatyShares,
@@ -36,10 +39,12 @@ __all__ = [
     "CapacityState",
     "CapacityUtilizationStatus",
     "CanonicalEvent",
+    "CanonicalProcessedEvent",
     "ENGINE_VERSION",
     "PRODUCT_ID",
     "PRODUCT_ROUTE",
     "PricingEventRecord",
+    "PricingProcessedEventRecord",
     "RunMetadata",
     "SCHEMA_VERSION",
     "SettlementBreakdown",
@@ -48,6 +53,7 @@ __all__ = [
     "__version__",
     "adapt_event_record",
     "adapt_event_records",
+    "adapt_processed_event_record",
     "apply_contractual_shares",
     "build_run_metadata",
     "calculate_settlement",

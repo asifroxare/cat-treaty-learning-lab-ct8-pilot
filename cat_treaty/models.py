@@ -264,3 +264,106 @@ class SettlementBreakdown:
             raise ValueError(
                 "settlement_mode must be a supported SettlementMode"
             )
+
+
+@dataclass(frozen=True, slots=True)
+class CanonicalProcessedEvent:
+    """Canonical CT1 view of one processed pricing-engine event."""
+
+    event: CanonicalEvent
+    qualifies_under_two_risk_warranty: bool
+    covered_loss_before_capacity_100_percent: float
+    payable_recovery_before_capacity_constraint: float
+    gross_contractual_recovery: float
+    capacity_before_event: float
+    capacity_consumed: float
+    remaining_capacity_before_reinstatement: float
+    amount_reinstated: float
+    capacity_available_for_next_event: float
+    reinstatements_remaining: float
+    net_subject_loss: float
+    reinstatement_premium_payable: float | None
+    settlement: SettlementBreakdown | None
+    capacity_basis: CapacityBasis = CapacityBasis.PAYABLE_PLACED_SHARE
+
+    def __post_init__(self) -> None:
+        if not isinstance(self.event, CanonicalEvent):
+            raise ValueError("event must be a CanonicalEvent")
+        if not isinstance(self.qualifies_under_two_risk_warranty, bool):
+            raise ValueError(
+                "qualifies_under_two_risk_warranty must be boolean"
+            )
+
+        for field_name, value in (
+            (
+                "covered_loss_before_capacity_100_percent",
+                self.covered_loss_before_capacity_100_percent,
+            ),
+            (
+                "payable_recovery_before_capacity_constraint",
+                self.payable_recovery_before_capacity_constraint,
+            ),
+            (
+                "gross_contractual_recovery",
+                self.gross_contractual_recovery,
+            ),
+            ("capacity_before_event", self.capacity_before_event),
+            ("capacity_consumed", self.capacity_consumed),
+            (
+                "remaining_capacity_before_reinstatement",
+                self.remaining_capacity_before_reinstatement,
+            ),
+            ("amount_reinstated", self.amount_reinstated),
+            (
+                "capacity_available_for_next_event",
+                self.capacity_available_for_next_event,
+            ),
+            ("reinstatements_remaining", self.reinstatements_remaining),
+            ("net_subject_loss", self.net_subject_loss),
+        ):
+            _validate_finite_number(field_name, value, non_negative=True)
+
+        if self.reinstatement_premium_payable is not None:
+            _validate_finite_number(
+                "reinstatement_premium_payable",
+                self.reinstatement_premium_payable,
+                non_negative=True,
+            )
+
+        if self.capacity_basis is not CapacityBasis.PAYABLE_PLACED_SHARE:
+            raise ValueError(
+                "capacity_basis must be payable_placed_share in CT1"
+            )
+
+        if not math.isclose(
+            self.capacity_consumed,
+            self.gross_contractual_recovery,
+        ):
+            raise ValueError(
+                "capacity_consumed must equal gross_contractual_recovery"
+            )
+
+        if self.reinstatement_premium_payable is None:
+            if self.settlement is not None:
+                raise ValueError(
+                    "settlement must be null until premium is finalized"
+                )
+        else:
+            if not isinstance(self.settlement, SettlementBreakdown):
+                raise ValueError(
+                    "finalized premium requires SettlementBreakdown"
+                )
+            if not math.isclose(
+                self.settlement.gross_contractual_recovery,
+                self.gross_contractual_recovery,
+            ):
+                raise ValueError(
+                    "settlement gross recovery must match event recovery"
+                )
+            if not math.isclose(
+                self.settlement.reinstatement_premium_payable,
+                self.reinstatement_premium_payable,
+            ):
+                raise ValueError(
+                    "settlement premium must match event premium"
+                )
