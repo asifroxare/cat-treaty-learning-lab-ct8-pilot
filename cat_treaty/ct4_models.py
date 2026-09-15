@@ -40,6 +40,17 @@ class HoursExclusionCode(str, Enum):
     MANUAL_SELECTION_INVALID = "manual_selection_invalid"
 
 
+class HoursElectionStatus(str, Enum):
+    SELECTED = "selected"
+    BLOCKED = "blocked"
+
+
+class HoursElectionIssueCode(str, Enum):
+    MANUAL_SELECTION_INVALID = "manual_selection_invalid"
+    NO_VALID_CANDIDATE_SET = "no_valid_candidate_set"
+    PROGRAM_GEOMETRY_BLOCKED = "program_geometry_blocked"
+
+
 class MetricPerspective(str, Enum):
     SUBJECT = "subject"
     RECOVERY_PRE_ANNUAL_CAPACITY = "recovery_pre_annual_capacity"
@@ -550,7 +561,7 @@ class HoursCandidateWindow:
     def __post_init__(self) -> None:
         _nonblank("candidate_id", self.candidate_id)
         start = _finite("start", self.start)
-        end = _finite("end", self.end, positive=True)
+        end = _finite("end", self.end)
         if end <= start:
             raise ValueError("candidate end must exceed start")
         _strings("component_ids", self.component_ids, allow_empty=False)
@@ -579,6 +590,8 @@ class HoursCandidateSet:
     admissibility: CandidateAdmissibility
     exclusion_codes: tuple[HoursExclusionCode, ...]
     exclusion_reasons: tuple[str, ...]
+    affected_ids: tuple[str, ...] = ()
+    rule_reference: str = "CT4-section-8"
 
     def __post_init__(self) -> None:
         _nonblank("candidate_set_id", self.candidate_set_id)
@@ -594,11 +607,91 @@ class HoursCandidateSet:
             raise ValueError("exclusion_codes must contain HoursExclusionCode values")
         _unique("exclusion_codes", self.exclusion_codes)
         _strings("exclusion_reasons", self.exclusion_reasons)
+        _strings("affected_ids", self.affected_ids)
+        _nonblank("rule_reference", self.rule_reference)
         excluded = self.admissibility is CandidateAdmissibility.EXCLUDED
         if excluded != bool(self.exclusion_codes) or excluded != bool(self.exclusion_reasons):
             raise ValueError("admissibility must match exclusion evidence")
         if not excluded and self.total_contractual_recovery is None:
             raise ValueError("valid candidate set requires contractual recovery")
+
+
+@dataclass(frozen=True, slots=True)
+class HoursElectionIssue:
+    code: HoursElectionIssueCode
+    candidate_set_id: str | None
+    message: str
+    affected_ids: tuple[str, ...]
+    rule_reference: str
+
+    def __post_init__(self) -> None:
+        _enum("code", self.code, HoursElectionIssueCode)
+        if self.candidate_set_id is not None:
+            _nonblank("candidate_set_id", self.candidate_set_id)
+        _nonblank("message", self.message)
+        _strings("affected_ids", self.affected_ids)
+        _nonblank("rule_reference", self.rule_reference)
+
+
+@dataclass(frozen=True, slots=True)
+class HoursClauseResult:
+    scenario: HoursClauseScenario
+    candidate_windows: tuple[HoursCandidateWindow, ...]
+    candidate_sets: tuple[HoursCandidateSet, ...]
+    election_status: HoursElectionStatus
+    selected_election_method: HoursElectionMethod
+    selected_candidate_set_id: str | None
+    valid_candidate_set_ids: tuple[str, ...]
+    selected_occurrence_rows: tuple[CT4OccurrenceLedgerRow, ...]
+    annual_row: CT4AnnualLedgerRow | None
+    election_issues: tuple[HoursElectionIssue, ...]
+    tie_break_facts: tuple[str, ...]
+
+    def __post_init__(self) -> None:
+        if not isinstance(self.scenario, HoursClauseScenario):
+            raise ValueError("scenario must be HoursClauseScenario")
+        if not isinstance(self.candidate_windows, tuple) or not all(
+            isinstance(item, HoursCandidateWindow) for item in self.candidate_windows
+        ):
+            raise ValueError("candidate_windows must contain HoursCandidateWindow values")
+        if not isinstance(self.candidate_sets, tuple) or not all(
+            isinstance(item, HoursCandidateSet) for item in self.candidate_sets
+        ):
+            raise ValueError("candidate_sets must contain HoursCandidateSet values")
+        _unique("candidate window ID", tuple(item.candidate_id for item in self.candidate_windows))
+        _unique("candidate set ID", tuple(item.candidate_set_id for item in self.candidate_sets))
+        _enum("election_status", self.election_status, HoursElectionStatus)
+        _enum("selected_election_method", self.selected_election_method, HoursElectionMethod)
+        _strings("valid_candidate_set_ids", self.valid_candidate_set_ids)
+        expected_valid = tuple(
+            item.candidate_set_id
+            for item in self.candidate_sets
+            if item.admissibility is CandidateAdmissibility.VALID
+        )
+        if self.valid_candidate_set_ids != expected_valid:
+            raise ValueError("valid_candidate_set_ids must identify every valid generated set")
+        if not isinstance(self.selected_occurrence_rows, tuple) or not all(
+            isinstance(item, CT4OccurrenceLedgerRow) for item in self.selected_occurrence_rows
+        ):
+            raise ValueError("selected_occurrence_rows must contain CT4OccurrenceLedgerRow values")
+        if not isinstance(self.election_issues, tuple) or not all(
+            isinstance(item, HoursElectionIssue) for item in self.election_issues
+        ):
+            raise ValueError("election_issues must contain HoursElectionIssue values")
+        _strings("tie_break_facts", self.tie_break_facts)
+        if self.election_status is HoursElectionStatus.SELECTED:
+            _nonblank("selected_candidate_set_id", self.selected_candidate_set_id)
+            if self.selected_candidate_set_id not in self.valid_candidate_set_ids:
+                raise ValueError("selected candidate set must be valid")
+            if not self.selected_occurrence_rows or not isinstance(self.annual_row, CT4AnnualLedgerRow):
+                raise ValueError("selected election requires occurrence and annual ledgers")
+            if self.election_issues:
+                raise ValueError("selected election cannot contain blocking issues")
+        else:
+            if self.selected_candidate_set_id is not None or self.selected_occurrence_rows or self.annual_row is not None:
+                raise ValueError("blocked election cannot contain selected results")
+            if not self.election_issues:
+                raise ValueError("blocked election requires structured issues")
 
 
 @dataclass(frozen=True, slots=True)

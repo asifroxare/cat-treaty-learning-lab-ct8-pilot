@@ -90,7 +90,7 @@ def apply_catalogue_simulation(
                 start=1,
             )
         )
-        annual = _annual_ledger(trial.annual_trial_id, rows)
+        annual = build_annual_ledger(trial.annual_trial_id, rows)
         annual_rows.append(annual)
         occurrence_rows.extend(rows)
 
@@ -144,7 +144,7 @@ def _evaluate_occurrence(
     )
 
 
-def _annual_ledger(
+def build_annual_ledger(
     annual_trial_id: int,
     rows: tuple[CT4OccurrenceLedgerRow, ...],
 ) -> CT4AnnualLedgerRow:
