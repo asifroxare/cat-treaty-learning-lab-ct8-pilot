@@ -1,7 +1,9 @@
 # CT4 Independent Review Handoff
 
-Review `docs/CT4_IMPLEMENTATION_SPEC.md` v1.0 against the frozen CT0–CT3
-architecture. This is a specification review; no CT4 implementation is present.
+This handoff records the scope used to review CT4 v1.0 against the frozen
+CT0–CT3 architecture. The resulting dispositions are incorporated in CT4 v1.1
+and recorded in `docs/CT4_AUDIT_DISPOSITION.md`. No CT4 implementation is
+present in the frozen specification checkpoint.
 
 ## Required review scope
 

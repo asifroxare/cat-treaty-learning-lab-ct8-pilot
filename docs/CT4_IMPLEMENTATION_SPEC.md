@@ -2,9 +2,9 @@
 
 **Milestone:** CT4 — Multi-Year Catalogue Application and Tail Analytics
 
-**Version:** 1.0
+**Version:** 1.1
 
-**Status:** Proposed for independent validation
+**Status:** Frozen following independent validation
 
 **Date:** 15 September 2026
 
@@ -24,6 +24,14 @@ This specification implements CT4 under:
 
 CT4 begins only from the installed CT3 commit `d58dccb`, for which 616 tests
 passed on Windows and in an independently extracted distribution.
+
+CT3 provenance is explicit: CT3 v1.0 was the review draft; the independent
+review identified the missing uncoordinated-overlap classification. Commit
+`5c61fb3` froze CT3 v1.1 after resolving that finding by separating topology
+from eligibility, adding topology value `overlapping`, and returning structured
+`uncoordinated_overlap` diagnostics with no recovery for G29. The implementation
+and final acceptance at commit `d58dccb` are recorded in
+`docs/CT3_AUDIT_DISPOSITION.md` and `docs/CT3_ACCEPTANCE_REPORT.md`.
 
 ## 2. Purpose
 
@@ -171,6 +179,10 @@ events.
 timestamped scenario with at most 12 loss components in one annual trial. It
 is not silently applied to a large stochastic catalogue.
 
+The occurrence-definition mode is fixed once for the entire simulation. An
+`hours_clause_teaching` request must have `trial_count = 1`; catalogue-defined
+and hours-clause trials cannot be mixed in one run.
+
 The scenario declares:
 
 - treaty-term start and end timestamps;
@@ -264,6 +276,14 @@ CT4 applies CT2 and CT3 independently to every selected occurrence. Any blocked
 or unreconciled occurrence blocks the complete simulation; it is not treated as
 zero recovery.
 
+The engine performs a preflight pass over trial IDs, event identities,
+program-term fingerprints, occurrence rules and CT3 geometry before the
+expensive occurrence loop. A later CT2 data failure still invalidates the full
+run and returns a structured failure manifest without partial tail analytics.
+This fail-loudly rule can require correction and rerun of a large catalogue;
+that operational cost is accepted for v1 to prevent a bad record from silently
+entering the empirical distribution as zero.
+
 ## 11. Pre-annual-capacity convention
 
 Because CT5 has not yet been implemented, every CT4 recovery is explicitly:
@@ -277,6 +297,9 @@ of independent occurrence entitlements before annual capacity.
 Every result, chart label, explanation and export must display this convention.
 The unqualified phrases "annual treaty recovery" and "net settlement" are
 prohibited in CT4 output.
+
+The exact field name is mandatory in backend and any future API schema; a
+presentation alias cannot replace it.
 
 ## 12. Annual-trial formulas
 
@@ -298,6 +321,14 @@ O_y^X = \max_j X_{yj}, \qquad O_y^X=0\text{ for an empty trial}
 
 OEP uses the largest applicable occurrence in each annual trial. It does not
 use the largest raw component inside an elected hours-clause occurrence.
+
+Because program terms and shares are fixed across the simulation, both
+recovery and insurer net loss are non-decreasing functions of subject loss.
+Therefore an occurrence with maximum subject loss must also attain the maximum
+recovery and maximum net-loss values, although smaller occurrences may tie on
+a plateau. CT4 asserts this invariant. For driver attribution, ties are broken
+first by greatest subject loss and then by deterministic occurrence order, so
+all three F17 perspectives identify the same driver occurrence.
 
 ### F18 — Annual aggregate (AEP sample)
 
@@ -370,6 +401,12 @@ Duplicate loss values remain separate ranked observations. The curve response
 may additionally consolidate equal loss values for display, but the underlying
 ranked sample and quantiles remain authoritative.
 
+CT4 freezes `r/Y`, rather than `r/(Y+1)`, because the curve represents the
+observed empirical exceedance frequency over the complete declared trial
+population, including zero years. The resulting 100% endpoint for the smallest
+observation is intentional. A chart may visually de-emphasize that endpoint but
+must not change the authoritative probability or use another plotting position.
+
 ### F23 — Empirical TVaR
 
 For nearest-rank index (m=\lceil pY\rceil):
@@ -431,6 +468,9 @@ but credibility is disclosed separately.
 
 Warnings do not silently suppress a result. The lab explains that simulation
 length, model assumptions and sampling error limit tail interpretation.
+All applicable warning codes attach cumulatively. For example, `T > Y` also
+produces both limited and severe credibility warnings; the most severe warning
+does not replace the others.
 
 ## 16. Exact reproducibility gate
 
@@ -640,6 +680,11 @@ not pool them into one empirical distribution.
 
 Existing G01–G34 retain their frozen meanings and IDs.
 
+G11 and G13 were reserved before CT3: CT1's frozen golden-case traceability
+assigns G11 to CT4 catalogue/reproducibility work and identifies G13 as the CT0
+occurrence-election scenario. CT3 deliberately preserved G11–G13 for these
+later milestones; it did not redefine them.
+
 | ID | Scenario | Expected CT4 check |
 |---|---|---|
 | G11 | Seeded catalogue reproducibility | Same normalized input and seed produce byte-identical annual samples and hashes |
@@ -737,8 +782,8 @@ The reviewer should answer explicitly:
    simulator contract?
 7. Is the F23 TVaR convention—quantile observation plus all larger
    observations—clear and suitable for v1?
-8. Should empirical curve rank use `r/Y`, or would a plotting position such as
-   `r/(Y+1)` be preferable? This must be frozen before coding.
+8. Is the now-frozen empirical curve rank `r/Y`, including its intentional 100%
+   endpoint, preferable for representing observed trial frequency in this lab?
 9. Are the return-period credibility thresholds informative without blocking
    computation?
 10. Is exact reproducibility correctly separated from statistical stability?
