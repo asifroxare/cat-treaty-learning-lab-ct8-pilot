@@ -26,18 +26,29 @@ class ProgramRecoveryBlockedError(ValueError):
         super().__init__(f"program recovery is blocked: {codes}")
 
 
-def evaluate_cat_xl_program(program_input: CT3ProgramInput) -> CT3AssessmentResult:
+def evaluate_cat_xl_program(
+    program_input: CT3ProgramInput,
+    *,
+    source_version: str,
+) -> CT3AssessmentResult:
     """Return one authoritative eligible or blocked CT3 assessment."""
 
     geometry = analyze_program_geometry(program_input)
+    from cat_treaty.ct3_metadata import build_ct3_run_metadata
+
+    metadata = build_ct3_run_metadata(
+        program_input=program_input,
+        source_version=source_version,
+    )
     if geometry.eligibility_status is ProgramEligibilityStatus.BLOCKED:
         return CT3AssessmentResult(
             program_input=program_input,
             geometry=geometry,
+            metadata=metadata,
             program_result=None,
         )
     result = calculate_program_recovery(program_input, geometry=geometry)
-    return CT3AssessmentResult(program_input, geometry, result)
+    return CT3AssessmentResult(program_input, geometry, metadata, result)
 
 
 def calculate_program_recovery(

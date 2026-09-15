@@ -30,6 +30,7 @@ from cat_treaty.ct3_models import (
     ProgramEligibilityStatus,
     ProgramGeometry,
 )
+from cat_treaty.ct3_metadata import build_ct3_run_metadata
 
 
 BASIS_INPUT = LossBasisInput(
@@ -382,7 +383,16 @@ def test_completed_program_rejects_failed_f15_f16_or_incomplete_rows(changes: di
 
 def test_assessment_envelope_requires_result_only_when_eligible() -> None:
     result = completed_result()
-    assessment = CT3AssessmentResult(result.program_input, result.geometry, result)
+    metadata = build_ct3_run_metadata(
+        program_input=result.program_input,
+        source_version="ct3-test",
+    )
+    assessment = CT3AssessmentResult(
+        result.program_input,
+        result.geometry,
+        metadata,
+        result,
+    )
     assert assessment.program_result is result
 
     issue = BlockingIssue(
@@ -400,8 +410,18 @@ def test_assessment_envelope_requires_result_only_when_eligible() -> None:
         eligibility_status=ProgramEligibilityStatus.BLOCKED,
         blocking_issues=(issue,),
     )
-    assert CT3AssessmentResult(program(), blocked, None).program_result is None
+    request = program()
+    blocked_metadata = build_ct3_run_metadata(
+        program_input=request,
+        source_version="ct3-test",
+    )
+    assert CT3AssessmentResult(
+        request,
+        blocked,
+        blocked_metadata,
+        None,
+    ).program_result is None
     with pytest.raises(ValueError):
-        CT3AssessmentResult(program(), blocked, result)
+        CT3AssessmentResult(request, blocked, blocked_metadata, result)
     with pytest.raises(ValueError):
-        CT3AssessmentResult(program(), geometry(), None)
+        CT3AssessmentResult(request, geometry(), blocked_metadata, None)

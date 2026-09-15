@@ -38,12 +38,20 @@ from cat_treaty.ct3_models import (
     CT3AssessmentResult,
     CT3ProgramInput,
     CT3ProgramResult,
+    CT3RunMetadata,
     GeometryClassification,
     GeometrySegment,
     GeometrySegmentType,
     OverlapCoordination,
     ProgramEligibilityStatus,
     ProgramGeometry,
+)
+from cat_treaty.ct3_metadata import (
+    CT3_ENGINE_VERSION,
+    CT3_SCHEMA_VERSION,
+    build_ct3_run_metadata,
+    canonicalize_ct3_inputs,
+    serialize_ct3_inputs,
 )
 from cat_treaty.geometry import analyze_program_geometry, geometry_order
 from cat_treaty.program import (
@@ -114,6 +122,9 @@ __all__ = [
     "CT3AssessmentResult",
     "CT3ProgramInput",
     "CT3ProgramResult",
+    "CT3RunMetadata",
+    "CT3_ENGINE_VERSION",
+    "CT3_SCHEMA_VERSION",
     "CatLayerInput",
     "CatLayerResult",
     "ExplanationFact",
@@ -166,7 +177,9 @@ __all__ = [
     "apply_inuring_waterfall",
     "build_loss_basis",
     "build_ct2_run_metadata",
+    "build_ct3_run_metadata",
     "canonicalize_ct2_inputs",
+    "canonicalize_ct3_inputs",
     "build_run_metadata",
     "calculate_settlement",
     "calculate_program_recovery",
@@ -177,5 +190,6 @@ __all__ = [
     "resolve_compatibility_request",
     "require_ct3_eligible_waterfall",
     "serialize_ct2_inputs",
+    "serialize_ct3_inputs",
     "verify_loss_basis_reconciliation",
 ]

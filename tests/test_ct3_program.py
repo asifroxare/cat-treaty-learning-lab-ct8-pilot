@@ -55,7 +55,7 @@ def program_at_loss(loss: float, **changes: object):
 
 
 def test_g26_continuous_program_recovery_reconciles_exactly() -> None:
-    assessment = evaluate_cat_xl_program(program())
+    assessment = evaluate_cat_xl_program(program(), source_version="ct3-test")
     result = assessment.program_result
 
     assert result is not None
@@ -242,7 +242,10 @@ def test_three_way_overlap_union_is_allocated_only_once() -> None:
     ],
 )
 def test_blocked_program_returns_geometry_and_no_recovery(scenario: object) -> None:
-    assessment = evaluate_cat_xl_program(scenario)  # type: ignore[arg-type]
+    assessment = evaluate_cat_xl_program(  # type: ignore[arg-type]
+        scenario,
+        source_version="ct3-test",
+    )
 
     assert assessment.geometry.eligibility_status is ProgramEligibilityStatus.BLOCKED
     assert assessment.geometry.segments

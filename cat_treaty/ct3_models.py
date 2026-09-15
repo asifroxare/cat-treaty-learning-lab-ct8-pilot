@@ -9,6 +9,7 @@ from dataclasses import dataclass
 from enum import Enum
 import math
 from numbers import Real
+import re
 
 from cat_treaty.ct2_metadata import CT2RunMetadata, build_ct2_run_metadata
 from cat_treaty.ct2_models import (
@@ -17,6 +18,10 @@ from cat_treaty.ct2_models import (
     InuringWaterfallResult,
     ReconciliationCheck,
 )
+from cat_treaty.metadata import PRODUCT_ID, PRODUCT_ROUTE
+
+
+_SHA256_PATTERN = re.compile(r"[0-9a-f]{64}")
 
 
 class OverlapCoordination(str, Enum):
@@ -48,6 +53,45 @@ class BlockingIssueCode(str, Enum):
     UNCOORDINATED_OVERLAP = "uncoordinated_overlap"
     INVALID_PRIORITY_ORDER = "invalid_priority_order"
     UNNECESSARY_PRIORITY_COORDINATION = "unnecessary_priority_coordination"
+
+
+@dataclass(frozen=True, slots=True)
+class CT3RunMetadata:
+    """Versioned identity and deterministic input hash for one CT3 run."""
+
+    product_id: str
+    product_route: str
+    program_id: str
+    occurrence_id: str
+    reporting_currency: str
+    ct2_input_hash: str
+    source_version: str
+    engine_version: str
+    schema_version: str
+    input_hash: str
+
+    def __post_init__(self) -> None:
+        for field_name in (
+            "product_id",
+            "product_route",
+            "program_id",
+            "occurrence_id",
+            "reporting_currency",
+            "ct2_input_hash",
+            "source_version",
+            "engine_version",
+            "schema_version",
+            "input_hash",
+        ):
+            _nonblank(field_name, getattr(self, field_name))
+        if self.product_id != PRODUCT_ID:
+            raise ValueError("product_id must match the treaty product")
+        if self.product_route != PRODUCT_ROUTE:
+            raise ValueError("product_route must match the treaty route")
+        if _SHA256_PATTERN.fullmatch(self.ct2_input_hash) is None:
+            raise ValueError("ct2_input_hash must be lowercase SHA-256 hex")
+        if _SHA256_PATTERN.fullmatch(self.input_hash) is None:
+            raise ValueError("input_hash must be lowercase SHA-256 hex")
 
 
 def _nonblank(field_name: str, value: object) -> None:
@@ -430,6 +474,7 @@ class CT3AssessmentResult:
 
     program_input: CT3ProgramInput
     geometry: ProgramGeometry
+    metadata: CT3RunMetadata
     program_result: CT3ProgramResult | None
 
     def __post_init__(self) -> None:
@@ -437,6 +482,27 @@ class CT3AssessmentResult:
             raise ValueError("program_input must be CT3ProgramInput")
         if not isinstance(self.geometry, ProgramGeometry):
             raise ValueError("geometry must be ProgramGeometry")
+        if not isinstance(self.metadata, CT3RunMetadata):
+            raise ValueError("metadata must be CT3RunMetadata")
+        basis = self.program_input.ct2_result.loss_basis.basis_input
+        if self.metadata.program_id != self.program_input.program_id:
+            raise ValueError("metadata program identity does not match")
+        if self.metadata.occurrence_id != basis.occurrence_id:
+            raise ValueError("metadata occurrence identity does not match")
+        if self.metadata.reporting_currency != basis.reporting_currency:
+            raise ValueError("metadata reporting currency does not match")
+        if self.metadata.ct2_input_hash != self.program_input.ct2_metadata.input_hash:
+            raise ValueError("metadata CT2 input hash does not match")
+        from cat_treaty.ct3_metadata import build_ct3_run_metadata
+
+        rebuilt = build_ct3_run_metadata(
+            program_input=self.program_input,
+            source_version=self.metadata.source_version,
+            engine_version=self.metadata.engine_version,
+            schema_version=self.metadata.schema_version,
+        )
+        if rebuilt.input_hash != self.metadata.input_hash:
+            raise ValueError("metadata CT3 input hash does not match")
         blocked = self.geometry.eligibility_status is ProgramEligibilityStatus.BLOCKED
         if blocked and self.program_result is not None:
             raise ValueError("blocked assessment must have null program_result")
