@@ -58,6 +58,11 @@ class RatioStatus(str, Enum):
     NOT_APPLICABLE_NO_OCCURRENCES = "not_applicable_no_occurrences"
 
 
+class PreflightIssueCode(str, Enum):
+    UNSUPPORTED_OCCURRENCE_MODE = "unsupported_occurrence_mode"
+    BLOCKED_PROGRAM_GEOMETRY = "blocked_program_geometry"
+
+
 def _nonblank(name: str, value: object) -> None:
     if not isinstance(value, str) or not value.strip():
         raise ValueError(f"{name} must be a non-empty string")
@@ -475,6 +480,58 @@ class CT4AnnualLedgerRow:
             raise ValueError("completed annual row requires passed F20 reconciliation")
         if not math.isclose(subject_aep, recovery_aep + net_aep, rel_tol=1e-12, abs_tol=1e-6):
             raise ValueError("F20 annual reconciliation failed")
+
+
+@dataclass(frozen=True, slots=True)
+class CT4PreflightIssue:
+    code: PreflightIssueCode
+    annual_trial_id: int | None
+    event_id: str | None
+    message: str
+    trace_reference: str
+
+    def __post_init__(self) -> None:
+        _enum("code", self.code, PreflightIssueCode)
+        if self.annual_trial_id is not None:
+            _positive_int("annual_trial_id", self.annual_trial_id)
+        if self.event_id is not None:
+            _nonblank("event_id", self.event_id)
+        _nonblank("message", self.message)
+        _nonblank("trace_reference", self.trace_reference)
+
+
+@dataclass(frozen=True, slots=True)
+class CT4CatalogueResult:
+    simulation_input: CT4SimulationInput
+    occurrence_rows: tuple[CT4OccurrenceLedgerRow, ...]
+    annual_rows: tuple[CT4AnnualLedgerRow, ...]
+    preflight_passed: bool
+
+    def __post_init__(self) -> None:
+        if not isinstance(self.simulation_input, CT4SimulationInput):
+            raise ValueError("simulation_input must be CT4SimulationInput")
+        if self.simulation_input.occurrence_definition_mode is not OccurrenceDefinitionMode.CATALOGUE_DEFINED:
+            raise ValueError("catalogue result requires catalogue-defined mode")
+        if not isinstance(self.occurrence_rows, tuple) or not all(
+            isinstance(item, CT4OccurrenceLedgerRow) for item in self.occurrence_rows
+        ):
+            raise ValueError("occurrence_rows must contain CT4OccurrenceLedgerRow values")
+        if not isinstance(self.annual_rows, tuple) or not all(
+            isinstance(item, CT4AnnualLedgerRow) for item in self.annual_rows
+        ):
+            raise ValueError("annual_rows must contain CT4AnnualLedgerRow values")
+        if not isinstance(self.preflight_passed, bool) or not self.preflight_passed:
+            raise ValueError("completed catalogue result requires passed preflight")
+        expected_ids = tuple(range(1, self.simulation_input.trial_count + 1))
+        if tuple(item.annual_trial_id for item in self.annual_rows) != expected_ids:
+            raise ValueError("annual rows must preserve every trial in contiguous order")
+        flattened = tuple(
+            occurrence
+            for annual in self.annual_rows
+            for occurrence in annual.occurrence_rows
+        )
+        if self.occurrence_rows != flattened:
+            raise ValueError("occurrence_rows must equal the ordered annual-ledger rows")
 
 
 @dataclass(frozen=True, slots=True)

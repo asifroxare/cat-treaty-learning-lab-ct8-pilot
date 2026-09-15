@@ -55,9 +55,11 @@ from cat_treaty.ct3_metadata import (
 )
 from cat_treaty.ct4_models import (
     CandidateAdmissibility,
+    CT4CatalogueResult,
     CT4AnnualTrialInput,
     CT4OccurrenceInput,
     CT4OccurrenceLedgerRow,
+    CT4PreflightIssue,
     CT4AnnualLedgerRow,
     CT4RunIdentity,
     CT4SimulationInput,
@@ -71,12 +73,18 @@ from cat_treaty.ct4_models import (
     MetricPerspective,
     NumericalToleranceProfile,
     OccurrenceDefinitionMode,
+    PreflightIssueCode,
     PerspectiveAnalytics,
     RatioStatus,
     TailConfiguration,
     TailEstimate,
     TailWarning,
     TailWarningCode,
+)
+from cat_treaty.simulation import (
+    CT4PreflightError,
+    apply_catalogue_simulation,
+    catalogue_preflight_issues,
 )
 from cat_treaty.geometry import analyze_program_geometry, geometry_order
 from cat_treaty.program import (
@@ -152,9 +160,12 @@ __all__ = [
     "CT3_ENGINE_VERSION",
     "CT3_SCHEMA_VERSION",
     "CT4AnnualTrialInput",
+    "CT4CatalogueResult",
     "CT4AnnualLedgerRow",
     "CT4OccurrenceInput",
     "CT4OccurrenceLedgerRow",
+    "CT4PreflightError",
+    "CT4PreflightIssue",
     "CT4RunIdentity",
     "CT4SimulationInput",
     "CatLayerInput",
@@ -199,6 +210,7 @@ __all__ = [
     "PricingEventRecord",
     "PricingProcessedEventRecord",
     "PricingTreatyYearRecord",
+    "PreflightIssueCode",
     "PerspectiveAnalytics",
     "RatioStatus",
     "RunMetadata",
@@ -222,6 +234,7 @@ __all__ = [
     "adapt_treaty_year_record",
     "analyze_program_geometry",
     "apply_contractual_shares",
+    "apply_catalogue_simulation",
     "apply_inuring_waterfall",
     "build_loss_basis",
     "build_ct2_run_metadata",
@@ -232,6 +245,7 @@ __all__ = [
     "calculate_settlement",
     "calculate_program_recovery",
     "calculate_share_factor",
+    "catalogue_preflight_issues",
     "geometry_order",
     "evaluate_cat_xl_program",
     "scale_payable_capacity",
