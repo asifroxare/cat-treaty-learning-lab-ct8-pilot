@@ -46,6 +46,11 @@ from cat_treaty.ct3_models import (
     ProgramGeometry,
 )
 from cat_treaty.geometry import analyze_program_geometry, geometry_order
+from cat_treaty.program import (
+    ProgramRecoveryBlockedError,
+    calculate_program_recovery,
+    evaluate_cat_xl_program,
+)
 from cat_treaty.completion import require_ct3_eligible_waterfall
 from cat_treaty.adapter import (
     PricingEventRecord,
@@ -144,6 +149,7 @@ __all__ = [
     "RunMetadata",
     "ProgramEligibilityStatus",
     "ProgramGeometry",
+    "ProgramRecoveryBlockedError",
     "ReconciliationCheck",
     "SCHEMA_VERSION",
     "SettlementBreakdown",
@@ -163,8 +169,10 @@ __all__ = [
     "canonicalize_ct2_inputs",
     "build_run_metadata",
     "calculate_settlement",
+    "calculate_program_recovery",
     "calculate_share_factor",
     "geometry_order",
+    "evaluate_cat_xl_program",
     "scale_payable_capacity",
     "resolve_compatibility_request",
     "require_ct3_eligible_waterfall",
