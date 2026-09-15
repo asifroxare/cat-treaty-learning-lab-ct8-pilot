@@ -632,6 +632,24 @@ class TailEstimate:
 
 
 @dataclass(frozen=True, slots=True)
+class EmpiricalExceedancePoint:
+    rank: int
+    loss: float
+    exceedance_probability: float
+
+    def __post_init__(self) -> None:
+        _positive_int("rank", self.rank)
+        _finite("loss", self.loss)
+        probability = _finite(
+            "exceedance_probability",
+            self.exceedance_probability,
+            positive=True,
+        )
+        if probability > 1:
+            raise ValueError("exceedance_probability must not exceed one")
+
+
+@dataclass(frozen=True, slots=True)
 class PerspectiveAnalytics:
     perspective: MetricPerspective
     annual_average_loss: float
@@ -643,6 +661,15 @@ class PerspectiveAnalytics:
     var_estimates: tuple[TailEstimate, ...]
     tvar_estimates: tuple[TailEstimate, ...]
     return_period_estimates: tuple[TailEstimate, ...]
+    oep_curve: tuple[EmpiricalExceedancePoint, ...] = ()
+    aep_curve: tuple[EmpiricalExceedancePoint, ...] = ()
+    oep_return_period_estimates: tuple[TailEstimate, ...] = ()
+    aep_return_period_estimates: tuple[TailEstimate, ...] = ()
+    oep_var_estimates: tuple[TailEstimate, ...] = ()
+    aep_var_estimates: tuple[TailEstimate, ...] = ()
+    oep_tvar_estimates: tuple[TailEstimate, ...] = ()
+    aep_tvar_estimates: tuple[TailEstimate, ...] = ()
+    formula_references: tuple[str, ...] = ("F19", "F21", "F22", "F23", "F24")
 
     def __post_init__(self) -> None:
         _enum("perspective", self.perspective, MetricPerspective)
@@ -687,9 +714,63 @@ class PerspectiveAnalytics:
             ("var_estimates", self.var_estimates),
             ("tvar_estimates", self.tvar_estimates),
             ("return_period_estimates", self.return_period_estimates),
+            ("oep_return_period_estimates", self.oep_return_period_estimates),
+            ("aep_return_period_estimates", self.aep_return_period_estimates),
+            ("oep_var_estimates", self.oep_var_estimates),
+            ("aep_var_estimates", self.aep_var_estimates),
+            ("oep_tvar_estimates", self.oep_tvar_estimates),
+            ("aep_tvar_estimates", self.aep_tvar_estimates),
         ):
             if not isinstance(values, tuple) or not all(isinstance(item, TailEstimate) for item in values):
                 raise ValueError(f"{name} must contain TailEstimate values")
+        for name, curve, sample in (
+            ("oep_curve", self.oep_curve, self.oep_sample),
+            ("aep_curve", self.aep_curve, self.aep_sample),
+        ):
+            if not isinstance(curve, tuple) or not all(
+                isinstance(item, EmpiricalExceedancePoint) for item in curve
+            ):
+                raise ValueError(f"{name} must contain EmpiricalExceedancePoint values")
+            if curve:
+                expected_losses = tuple(sorted((float(value) for value in sample), reverse=True))
+                if tuple(item.rank for item in curve) != tuple(range(1, len(sample) + 1)):
+                    raise ValueError(f"{name} ranks must be contiguous from one")
+                if tuple(item.loss for item in curve) != expected_losses:
+                    raise ValueError(f"{name} losses must be the descending empirical sample")
+                expected_probabilities = tuple(
+                    rank / len(sample) for rank in range(1, len(sample) + 1)
+                )
+                if tuple(item.exceedance_probability for item in curve) != expected_probabilities:
+                    raise ValueError(f"{name} must use the frozen r/Y plotting position")
+        _strings("formula_references", self.formula_references, allow_empty=False)
+
+
+@dataclass(frozen=True, slots=True)
+class CT4TailAnalytics:
+    perspectives: tuple[PerspectiveAnalytics, ...]
+    aal_reconciliation_passed: bool
+    formula_references: tuple[str, ...] = ("F19", "F20", "F21", "F22", "F23", "F24")
+
+    def __post_init__(self) -> None:
+        if not isinstance(self.perspectives, tuple) or not all(
+            isinstance(item, PerspectiveAnalytics) for item in self.perspectives
+        ):
+            raise ValueError("perspectives must contain PerspectiveAnalytics values")
+        expected = (
+            MetricPerspective.SUBJECT,
+            MetricPerspective.RECOVERY_PRE_ANNUAL_CAPACITY,
+            MetricPerspective.INSURER_NET_PRE_ANNUAL_CAPACITY,
+        )
+        if tuple(item.perspective for item in self.perspectives) != expected:
+            raise ValueError("perspectives must contain subject, recovery and net in frozen order")
+        if not isinstance(self.aal_reconciliation_passed, bool) or not self.aal_reconciliation_passed:
+            raise ValueError("completed tail analytics requires passed AAL reconciliation")
+        subject, recovery, net = (
+            item.annual_average_loss for item in self.perspectives
+        )
+        if not math.isclose(subject, recovery + net, rel_tol=1e-12, abs_tol=1e-6):
+            raise ValueError("F20 AAL reconciliation failed")
+        _strings("formula_references", self.formula_references, allow_empty=False)
 
 
 @dataclass(frozen=True, slots=True)
