@@ -45,6 +45,7 @@ from cat_treaty.ct3_models import (
     ProgramEligibilityStatus,
     ProgramGeometry,
 )
+from cat_treaty.geometry import analyze_program_geometry, geometry_order
 from cat_treaty.completion import require_ct3_eligible_waterfall
 from cat_treaty.adapter import (
     PricingEventRecord,
@@ -154,6 +155,7 @@ __all__ = [
     "adapt_pricing_result",
     "adapt_processed_event_record",
     "adapt_treaty_year_record",
+    "analyze_program_geometry",
     "apply_contractual_shares",
     "apply_inuring_waterfall",
     "build_loss_basis",
@@ -162,6 +164,7 @@ __all__ = [
     "build_run_metadata",
     "calculate_settlement",
     "calculate_share_factor",
+    "geometry_order",
     "scale_payable_capacity",
     "resolve_compatibility_request",
     "require_ct3_eligible_waterfall",
