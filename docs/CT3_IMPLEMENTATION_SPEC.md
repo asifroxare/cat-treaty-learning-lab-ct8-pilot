@@ -1,8 +1,8 @@
 # Catastrophe Treaty Learning Lab — CT3 Implementation Specification
 
 **Milestone:** CT3 — Multi-Layer Cat XL Program and Geometry Controls
-**Version:** 1.0
-**Status:** Proposed for independent validation
+**Version:** 1.1
+**Status:** Frozen following independent validation
 **Date:** 15 September 2026
 **Product:** EdInsured Catastrophe Treaty Learning Lab
 
@@ -169,11 +169,30 @@ from contract terms even if the current occurrence does not reach a segment.
 | `single_layer` | Exactly one valid layer |
 | `continuous` | Multiple layers, no internal gaps and no overlaps |
 | `ventilated` | One or more internal gaps and no overlaps |
-| `coordinated_overlap` | One or more overlaps, no gaps, and a valid priority rule |
-| `mixed` | At least one gap and at least one overlap, with both controls satisfied |
+| `overlapping` | One or more overlaps and no gaps |
+| `mixed` | At least one gap and at least one overlap |
 
 The response separately carries `has_gaps` and `has_overlaps`; classification
-must not hide either condition.
+must not hide either condition. Classification describes topology only and is
+always populated after the layer terms pass validation. It does not assert that
+the program is eligible for recovery.
+
+### 7.2 Program eligibility
+
+The geometry response separately carries `program_eligibility_status` as
+`eligible` or `blocked` and a deterministic collection of structured
+`blocking_issues`. A blocking issue includes a stable code, affected segment,
+affected layer IDs, message and rule reference. Frozen CT3 codes include:
+
+- `unacknowledged_gap`;
+- `uncoordinated_overlap`;
+- `invalid_priority_order`; and
+- `unnecessary_priority_coordination`.
+
+An overlapping or mixed topology under `overlap_coordination = none` is
+therefore classified normally but is `blocked` by
+`uncoordinated_overlap`. Topology and contractual eligibility must never be
+collapsed into one field.
 
 ## 8. Gap control
 
@@ -186,9 +205,10 @@ program request. An acknowledged gap:
 - is included in insurer retained loss; and
 - produces a deterministic ventilation warning and learning explanation.
 
-If any internal gap exists and acknowledgement is false, the program request
-fails before recovery is emitted. Acknowledgement does not endorse the
-commercial suitability of the gap.
+If any internal gap exists and acknowledgement is false, eligibility is
+`blocked` and no recovery is emitted. The diagnostic geometry response remains
+available. Acknowledgement does not endorse the commercial suitability of the
+gap.
 
 Supplying `intentional_gap_acknowledged = true` when no gap exists is permitted
 but returns a notice that the acknowledgement was not required. It has no
@@ -202,8 +222,9 @@ effect on recovery.
 - `priority` — allocate each overlapping loss band once according to an
   explicit complete `priority_order`.
 
-If overlap exists under `none`, the failure identifies every affected segment
-and layer ID. The engine must not silently sum overlapping entitlements.
+If overlap exists under `none`, eligibility is `blocked`; the geometry response
+identifies every affected segment and layer ID, and no recovery is emitted. The
+engine must not silently sum overlapping entitlements.
 
 `priority_order` must contain every program layer ID exactly once. It is used
 only for band allocation, never inferred from input or geometry order. Supplying
@@ -298,6 +319,22 @@ where:
 - \(T\) is subject loss above the highest exhaustion; and
 - coordinated allocated intervals are disjoint.
 
+For the program attachment and exhaustion extremes
+\(A_{\min}=\min_i A_i\) and \(E_{\max}=\max_i E_i\), and for each internal gap
+\(g=[g_l,g_u)\), the retained-band definitions are:
+
+\[
+B=\min(S,A_{\min})
+\]
+
+\[
+G=\sum_{g\in\text{gaps}}\max(\min(S,g_u)-g_l,0)
+\]
+
+\[
+T=\max(S-E_{\max},0)
+\]
+
 Both F15 and F16 must pass. The result exposes all four retained-loss drivers:
 base retention, gap loss, in-layer retained participation and above-tower loss.
 
@@ -307,9 +344,10 @@ base retention, gap loss, in-layer retained participation and above-tower loss.
 
 - deterministic sorted layer IDs;
 - attachment and exhaustion boundaries;
-- geometry classification;
+- topology-only geometry classification;
 - `has_gaps` and `has_overlaps`;
 - every finite geometry segment with start, end, classification and layer IDs;
+- program eligibility status and structured blocking issues;
 - gap acknowledgement status;
 - overlap coordination mode and priority order; and
 - validation notices, warnings and trace references.
@@ -340,7 +378,11 @@ base retention, gap loss, in-layer retained participation and above-tower loss.
 - deterministic explanations, warnings and assumptions; and
 - CT3 schema, engine and normalized-input hash metadata.
 
-No failed geometry returns a valid program recovery result.
+After valid layer terms are received, a blocked program still returns the
+complete diagnostic geometry response. Its program recovery result is null and
+it emits no layer or program recovery amounts. Invalid layer terms fail before
+geometry construction. No blocked or invalid geometry returns a valid program
+recovery result.
 
 ## 12. Numerical and validation rules
 
@@ -399,8 +441,8 @@ Existing G01–G25 retain their frozen meanings and IDs.
 | G10 | Ventilated program | Gap loss remains with insurer and is separately visible |
 | G26 | Continuous USD 45m example | USD 20m xs 10m plus USD 30m xs 30m recovers USD 35m; insurer retains USD 10m |
 | G27 | Intentional ventilation | Acknowledged USD 30m–50m gap is classified and reconciled |
-| G28 | Unacknowledged gap | Program fails before recovery is emitted |
-| G29 | Ambiguous overlap | Overlap with coordination `none` fails with segment and layer reasons |
+| G28 | Unacknowledged gap | Ventilated or mixed topology remains visible; status is blocked with `unacknowledged_gap`, and no recovery is emitted |
+| G29 | Ambiguous overlap | Overlapping or mixed topology remains visible; coordination `none` produces `uncoordinated_overlap` with segment and layer reasons and no recovery |
 | G30 | Priority overlap | Overlapping band is allocated once to the first-priority layer and both pre/post coordination amounts are shown |
 | G31 | Different layer shares | Each layer separately applies ceded share × placement share |
 | G32 | Request-order permutation | Non-overlap geometry, recovery, serialization and hash remain identical |
@@ -414,10 +456,10 @@ Existing G01–G25 retain their frozen meanings and IDs.
 | CT1/CT2 regression | All 485 existing tests remain passing |
 | CT2 entry | Only a completed CT2 waterfall result is accepted |
 | Single-layer identity | G01–G05 match frozen occurrence results at equivalent terms |
-| Geometry | Segment boundaries, classification and layer membership recompute independently |
+| Geometry | Segment boundaries, topology classification and layer membership recompute independently of eligibility |
 | Continuous tower | Adjacent boundaries produce no gap or overlap |
 | Ventilated tower | Every gap and current gap loss are visible and acknowledged |
-| Ambiguous overlap | Recovery is blocked with structured reasons |
+| Ambiguous overlap | Topology is returned and recovery is blocked with structured reasons |
 | Priority overlap | Each reached band is allocated once in explicit priority order |
 | Shares | Ceded and placement shares remain separate and functional per layer |
 | Program reconciliation | F15 and F16 pass independently |
