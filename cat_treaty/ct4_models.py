@@ -867,6 +867,66 @@ class CT4TailAnalytics:
 
 
 @dataclass(frozen=True, slots=True)
+class FrequencyMetric:
+    numerator: int
+    denominator: int
+    value: float | None
+    status: RatioStatus
+    denominator_label: str
+
+    def __post_init__(self) -> None:
+        for name in ("numerator", "denominator"):
+            number = getattr(self, name)
+            if isinstance(number, bool) or not isinstance(number, int) or number < 0:
+                raise ValueError(f"{name} must be a non-negative integer")
+        if self.numerator > self.denominator:
+            raise ValueError("frequency numerator cannot exceed denominator")
+        _enum("status", self.status, RatioStatus)
+        _nonblank("denominator_label", self.denominator_label)
+        if self.denominator == 0:
+            if self.value is not None or self.status is not RatioStatus.NOT_APPLICABLE_NO_OCCURRENCES:
+                raise ValueError("zero denominator requires null value and no-occurrences status")
+        else:
+            value = _finite("value", self.value)
+            if value > 1 or self.status is not RatioStatus.APPLICABLE:
+                raise ValueError("positive denominator requires an applicable frequency in [0, 1]")
+            if not math.isclose(value, self.numerator / self.denominator, rel_tol=1e-12, abs_tol=1e-12):
+                raise ValueError("frequency value does not reconcile")
+
+
+@dataclass(frozen=True, slots=True)
+class LayerFrequencyAnalytics:
+    layer_id: str
+    occurrence_exhaustion_frequency: FrequencyMetric
+    annual_exhaustion_frequency: FrequencyMetric
+
+    def __post_init__(self) -> None:
+        _nonblank("layer_id", self.layer_id)
+        if not isinstance(self.occurrence_exhaustion_frequency, FrequencyMetric):
+            raise ValueError("occurrence_exhaustion_frequency must be FrequencyMetric")
+        if not isinstance(self.annual_exhaustion_frequency, FrequencyMetric):
+            raise ValueError("annual_exhaustion_frequency must be FrequencyMetric")
+
+
+@dataclass(frozen=True, slots=True)
+class CT4FrequencyAnalytics:
+    occurrence_attachment_frequency: FrequencyMetric
+    annual_attachment_frequency: FrequencyMetric
+    layer_exhaustion_frequencies: tuple[LayerFrequencyAnalytics, ...]
+
+    def __post_init__(self) -> None:
+        if not isinstance(self.occurrence_attachment_frequency, FrequencyMetric):
+            raise ValueError("occurrence_attachment_frequency must be FrequencyMetric")
+        if not isinstance(self.annual_attachment_frequency, FrequencyMetric):
+            raise ValueError("annual_attachment_frequency must be FrequencyMetric")
+        if not isinstance(self.layer_exhaustion_frequencies, tuple) or not all(
+            isinstance(item, LayerFrequencyAnalytics) for item in self.layer_exhaustion_frequencies
+        ):
+            raise ValueError("layer_exhaustion_frequencies must contain LayerFrequencyAnalytics")
+        _unique("layer_id", tuple(item.layer_id for item in self.layer_exhaustion_frequencies))
+
+
+@dataclass(frozen=True, slots=True)
 class CT4RunIdentity:
     simulation_id: str
     input_hash: str

@@ -18,6 +18,7 @@ from cat_treaty.ct4_models import (
     OccurrenceDefinitionMode,
 )
 from cat_treaty.geometry import geometry_order
+from cat_treaty.frequency import calculate_frequency_analytics_from_rows
 from cat_treaty.metadata import PRODUCT_ID, PRODUCT_ROUTE
 
 
@@ -99,6 +100,7 @@ def canonicalize_ct4_result(
         raise TypeError("analytics must be CT4TailAnalytics")
     _validate_analytics_matches_result(result, analytics)
     if isinstance(result, CT4CatalogueResult):
+        annual_rows = result.annual_rows
         result_payload: dict[str, object] = {
             "result_type": "catalogue",
             "occurrence_rows": [_occurrence_row(item) for item in result.occurrence_rows],
@@ -108,6 +110,7 @@ def canonicalize_ct4_result(
     elif isinstance(result, HoursClauseResult):
         if result.election_status is not HoursElectionStatus.SELECTED or result.annual_row is None:
             raise ValueError("blocked hours-clause result cannot receive a completed result hash")
+        annual_rows = (result.annual_row,)
         result_payload = {
             "result_type": "hours_clause",
             "candidate_windows": [
@@ -144,6 +147,9 @@ def canonicalize_ct4_result(
     else:
         raise TypeError("result must be CT4CatalogueResult or HoursClauseResult")
     result_payload["analytics"] = _analytics(analytics)
+    result_payload["frequencies"] = _frequencies(
+        calculate_frequency_analytics_from_rows(annual_rows)
+    )
     return result_payload
 
 
@@ -335,6 +341,30 @@ def _analytics(analytics: CT4TailAnalytics) -> dict[str, object]:
             }
             for view in analytics.perspectives
         ],
+    }
+
+
+def _frequencies(frequencies) -> dict[str, object]:
+    def metric(item):
+        return {
+            "denominator": item.denominator,
+            "denominator_label": item.denominator_label,
+            "numerator": item.numerator,
+            "status": item.status.value,
+            "value": item.value,
+        }
+
+    return {
+        "annual_attachment_frequency": metric(frequencies.annual_attachment_frequency),
+        "layer_exhaustion_frequencies": [
+            {
+                "annual_exhaustion_frequency": metric(item.annual_exhaustion_frequency),
+                "layer_id": item.layer_id,
+                "occurrence_exhaustion_frequency": metric(item.occurrence_exhaustion_frequency),
+            }
+            for item in frequencies.layer_exhaustion_frequencies
+        ],
+        "occurrence_attachment_frequency": metric(frequencies.occurrence_attachment_frequency),
     }
 
 
