@@ -115,6 +115,7 @@ from cat_treaty.ct5_models import (
     CT5TreatyTerms,
     CT5UtilizationStatus,
     ReinstatementChargeType,
+    ReinstatementPremiumResult,
     ReinstatementTimeBasis,
     ReinstatementTranche,
     TrancheCapacityUsage,
@@ -130,6 +131,10 @@ from cat_treaty.annual_capacity import (
     apply_annual_capacity,
     calculate_capacity_limits,
     initialize_annual_capacity,
+)
+from cat_treaty.reinstatement import (
+    calculate_reinstatement_premium,
+    calculate_reinstatement_time_factor,
 )
 from cat_treaty.frequency import (
     calculate_frequency_analytics,
@@ -323,6 +328,7 @@ __all__ = [
     "ProgramRecoveryBlockedError",
     "ReconciliationCheck",
     "ReinstatementChargeType",
+    "ReinstatementPremiumResult",
     "ReinstatementTimeBasis",
     "ReinstatementTranche",
     "SCHEMA_VERSION",
@@ -366,6 +372,8 @@ __all__ = [
     "calculate_tail_analytics",
     "calculate_tail_analytics_from_rows",
     "calculate_program_recovery",
+    "calculate_reinstatement_premium",
+    "calculate_reinstatement_time_factor",
     "calculate_share_factor",
     "catalogue_preflight_issues",
     "empirical_exceedance_curve",

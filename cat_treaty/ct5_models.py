@@ -408,6 +408,40 @@ class TrancheAllocation:
 
 
 @dataclass(frozen=True, slots=True)
+class ReinstatementPremiumResult:
+    """Completed F30 pricing evidence for one layer and occurrence."""
+
+    layer_id: str
+    event_time: float
+    original_layer_premium: float
+    initial_capacity: float
+    tranche_allocations: tuple[TrancheAllocation, ...]
+    reinstatement_premium_payable: float
+
+    def __post_init__(self) -> None:
+        _nonblank("layer_id", self.layer_id)
+        _finite("event_time", self.event_time)
+        _finite("original_layer_premium", self.original_layer_premium)
+        initial = _finite("initial_capacity", self.initial_capacity)
+        _tuple_of("tranche_allocations", self.tranche_allocations, TrancheAllocation)
+        premium = _finite(
+            "reinstatement_premium_payable",
+            self.reinstatement_premium_payable,
+        )
+        sequences = tuple(item.tranche_sequence for item in self.tranche_allocations)
+        if sequences != tuple(sorted(sequences)) or len(sequences) != len(set(sequences)):
+            raise ValueError("priced tranche allocations must be unique and ordered")
+        if initial == 0 and self.tranche_allocations:
+            raise ValueError("zero initial capacity cannot contain tranche allocations")
+        expected = math.fsum(
+            item.reinstatement_premium_payable
+            for item in self.tranche_allocations
+        )
+        if not _close(premium, expected):
+            raise ValueError("F30 event premium does not reconcile to tranche premiums")
+
+
+@dataclass(frozen=True, slots=True)
 class CT5Settlement:
     gross_contractual_recovery: float
     reinstatement_premium_payable: float
