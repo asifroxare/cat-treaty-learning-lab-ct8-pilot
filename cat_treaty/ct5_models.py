@@ -258,6 +258,121 @@ class CT5CapacityState:
 
 
 @dataclass(frozen=True, slots=True)
+class TrancheCapacityUsage:
+    """Unpriced F29 capacity usage for one reinstatement tranche."""
+
+    tranche_sequence: int
+    capacity_before: float
+    amount_used: float
+    capacity_after: float
+
+    def __post_init__(self) -> None:
+        _positive_int("tranche_sequence", self.tranche_sequence)
+        before = _finite("capacity_before", self.capacity_before)
+        used = _finite("amount_used", self.amount_used)
+        after = _finite("capacity_after", self.capacity_after)
+        if used > before and not _close(used, before):
+            raise ValueError("amount_used cannot exceed tranche capacity_before")
+        if not _close(before, used + after):
+            raise ValueError("tranche capacity usage does not reconcile")
+
+
+@dataclass(frozen=True, slots=True)
+class CT5CapacityTransition:
+    """One completed F26--F29 state transition, before F30 pricing."""
+
+    state_before: CT5CapacityState
+    pre_annual_capacity_recovery: float
+    gross_contractual_recovery: float
+    capacity_constrained_recovery_shortfall: float
+    active_capacity_after_recovery: float
+    amount_reinstated: float
+    tranche_usages: tuple[TrancheCapacityUsage, ...]
+    state_after: CT5CapacityState
+
+    def __post_init__(self) -> None:
+        if not isinstance(self.state_before, CT5CapacityState):
+            raise ValueError("state_before must be CT5CapacityState")
+        if not isinstance(self.state_after, CT5CapacityState):
+            raise ValueError("state_after must be CT5CapacityState")
+        pre = _finite(
+            "pre_annual_capacity_recovery", self.pre_annual_capacity_recovery
+        )
+        recovery = _finite(
+            "gross_contractual_recovery", self.gross_contractual_recovery
+        )
+        shortfall = _finite(
+            "capacity_constrained_recovery_shortfall",
+            self.capacity_constrained_recovery_shortfall,
+        )
+        after_recovery = _finite(
+            "active_capacity_after_recovery", self.active_capacity_after_recovery
+        )
+        reinstated = _finite("amount_reinstated", self.amount_reinstated)
+        _tuple_of("tranche_usages", self.tranche_usages, TrancheCapacityUsage)
+        if (
+            self.state_before.layer_id != self.state_after.layer_id
+            or self.state_before.annual_trial_id != self.state_after.annual_trial_id
+        ):
+            raise ValueError("capacity transition cannot change layer or annual trial")
+        if self.state_after.completed_event_count != self.state_before.completed_event_count + 1:
+            raise ValueError("capacity transition must advance one completed event")
+        if not _close(
+            self.state_before.initial_capacity, self.state_after.initial_capacity
+        ) or not _close(
+            self.state_before.initial_reinstatement_reserve,
+            self.state_after.initial_reinstatement_reserve,
+        ):
+            raise ValueError("capacity transition cannot change frozen annual capacity")
+        expected_recovery = min(pre, self.state_before.active_capacity)
+        if not _close(recovery, expected_recovery):
+            raise ValueError("F26 recovery must be the lesser of entitlement and active capacity")
+        expected_reinstated = min(
+            self.state_before.initial_capacity - after_recovery,
+            self.state_before.remaining_reinstatement_reserve,
+        )
+        if not _close(reinstated, expected_reinstated):
+            raise ValueError("F28 reinstatement must follow the automatic restoration rule")
+        if not _close(
+            self.state_after.cumulative_recovery,
+            self.state_before.cumulative_recovery + recovery,
+        ) or not _close(
+            self.state_after.cumulative_reinstated,
+            self.state_before.cumulative_reinstated + reinstated,
+        ):
+            raise ValueError("capacity transition cumulative balances do not advance")
+        checks = (
+            (pre, recovery + shortfall, "F26 recovery and shortfall"),
+            (
+                self.state_before.active_capacity,
+                recovery + after_recovery,
+                "F27 active capacity",
+            ),
+            (
+                self.state_after.active_capacity,
+                after_recovery + reinstated,
+                "F28 restored active capacity",
+            ),
+            (
+                self.state_before.remaining_reinstatement_reserve,
+                self.state_after.remaining_reinstatement_reserve + reinstated,
+                "F28 reinstatement reserve",
+            ),
+            (
+                reinstated,
+                math.fsum(item.amount_used for item in self.tranche_usages),
+                "F29 tranche usage",
+            ),
+        )
+        for actual, expected, message in checks:
+            if not _close(actual, expected):
+                raise ValueError(f"{message} does not reconcile")
+        sequences = tuple(item.tranche_sequence for item in self.tranche_usages)
+        if sequences != tuple(sorted(sequences)) or len(sequences) != len(set(sequences)):
+            raise ValueError("tranche usages must be unique and ordered")
+
+
+@dataclass(frozen=True, slots=True)
 class TrancheAllocation:
     tranche_sequence: int
     capacity_before: float
@@ -626,4 +741,3 @@ class CT5AnnualLedgerRow:
             + values["insurer_net_subject_loss"],
         ):
             raise ValueError("annual F33 subject loss does not reconcile")
-

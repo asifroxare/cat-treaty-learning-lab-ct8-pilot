@@ -104,6 +104,7 @@ from cat_treaty.ct5_models import (
     ABSOLUTE_CURRENCY_TOLERANCE,
     RELATIVE_TOLERANCE,
     CT5AnnualLedgerRow,
+    CT5CapacityTransition,
     CT5CapacityState,
     CT5EventLedgerRow,
     CT5LayerAnnualSummary,
@@ -116,12 +117,19 @@ from cat_treaty.ct5_models import (
     ReinstatementChargeType,
     ReinstatementTimeBasis,
     ReinstatementTranche,
+    TrancheCapacityUsage,
     TrancheAllocation,
 )
 from cat_treaty.occurrence_definition import (
     evaluate_hours_clause_scenario,
     generate_candidate_sets,
     generate_candidate_windows,
+)
+from cat_treaty.annual_capacity import (
+    allocate_reinstatement_tranches,
+    apply_annual_capacity,
+    calculate_capacity_limits,
+    initialize_annual_capacity,
 )
 from cat_treaty.frequency import (
     calculate_frequency_analytics,
@@ -240,6 +248,7 @@ __all__ = [
     "CT4SimulationInput",
     "CT4TailAnalytics",
     "CT5AnnualLedgerRow",
+    "CT5CapacityTransition",
     "CT5CapacityState",
     "CT5EventLedgerRow",
     "CT5LayerAnnualSummary",
@@ -320,6 +329,7 @@ __all__ = [
     "SettlementBreakdown",
     "SettlementMode",
     "TreatyShares",
+    "TrancheCapacityUsage",
     "TrancheAllocation",
     "TailConfiguration",
     "TailEstimate",
@@ -334,6 +344,8 @@ __all__ = [
     "adapt_processed_event_record",
     "adapt_treaty_year_record",
     "analyze_program_geometry",
+    "allocate_reinstatement_tranches",
+    "apply_annual_capacity",
     "apply_contractual_shares",
     "apply_catalogue_simulation",
     "apply_inuring_waterfall",
@@ -350,6 +362,7 @@ __all__ = [
     "calculate_settlement",
     "calculate_frequency_analytics",
     "calculate_frequency_analytics_from_rows",
+    "calculate_capacity_limits",
     "calculate_tail_analytics",
     "calculate_tail_analytics_from_rows",
     "calculate_program_recovery",
@@ -362,6 +375,7 @@ __all__ = [
     "generate_candidate_windows",
     "generate_reference_metrics",
     "geometry_order",
+    "initialize_annual_capacity",
     "nearest_rank_quantile",
     "evaluate_cat_xl_program",
     "scale_payable_capacity",
