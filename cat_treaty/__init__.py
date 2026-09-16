@@ -136,6 +136,7 @@ from cat_treaty.reinstatement import (
     calculate_reinstatement_premium,
     calculate_reinstatement_time_factor,
 )
+from cat_treaty.ct5_settlement import calculate_ct5_settlement
 from cat_treaty.frequency import (
     calculate_frequency_analytics,
     calculate_frequency_analytics_from_rows,
@@ -369,6 +370,7 @@ __all__ = [
     "calculate_frequency_analytics",
     "calculate_frequency_analytics_from_rows",
     "calculate_capacity_limits",
+    "calculate_ct5_settlement",
     "calculate_tail_analytics",
     "calculate_tail_analytics_from_rows",
     "calculate_program_recovery",
