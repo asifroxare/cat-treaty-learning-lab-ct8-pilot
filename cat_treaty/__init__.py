@@ -139,6 +139,18 @@ from cat_treaty.reinstatement import (
 )
 from cat_treaty.ct5_settlement import calculate_ct5_settlement
 from cat_treaty.ct5_simulation import apply_ct5_catalogue
+from cat_treaty.ct5_analytics import calculate_ct5_analytics
+from cat_treaty.ct5_analytics_models import (
+    CT5Analytics,
+    CT5ConditionalMetricStatus,
+    CT5ExceedancePoint,
+    CT5LayerExhaustionMetric,
+    CT5OperationalAnalytics,
+    CT5PerspectiveAnalytics,
+    CT5RatioStatus,
+    CT5TailAnalytics,
+    CT5TailEstimate,
+)
 from cat_treaty.frequency import (
     calculate_frequency_analytics,
     calculate_frequency_analytics_from_rows,
@@ -256,17 +268,26 @@ __all__ = [
     "CT4SimulationInput",
     "CT4TailAnalytics",
     "CT5AnnualLedgerRow",
+    "CT5Analytics",
     "CT5CapacityTransition",
     "CT5CatalogueResult",
     "CT5CapacityState",
     "CT5EventLedgerRow",
+    "CT5ExceedancePoint",
     "CT5LayerAnnualSummary",
+    "CT5LayerExhaustionMetric",
     "CT5LayerEventLedgerRow",
     "CT5LayerTerms",
     "CT5MetricPerspective",
+    "CT5OperationalAnalytics",
+    "CT5PerspectiveAnalytics",
+    "CT5RatioStatus",
     "CT5Settlement",
+    "CT5TailAnalytics",
+    "CT5TailEstimate",
     "CT5TreatyTerms",
     "CT5UtilizationStatus",
+    "CT5ConditionalMetricStatus",
     "CatLayerInput",
     "CatLayerResult",
     "ExplanationFact",
@@ -375,6 +396,7 @@ __all__ = [
     "calculate_frequency_analytics_from_rows",
     "calculate_capacity_limits",
     "calculate_ct5_settlement",
+    "calculate_ct5_analytics",
     "calculate_tail_analytics",
     "calculate_tail_analytics_from_rows",
     "calculate_program_recovery",
