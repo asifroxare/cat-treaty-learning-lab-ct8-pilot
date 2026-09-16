@@ -4,6 +4,7 @@ import math
 from numbers import Real
 
 from cat_treaty.ct4_models import (
+    CT4AnnualLedgerRow,
     CT4CatalogueResult,
     CT4TailAnalytics,
     EmpiricalExceedancePoint,
@@ -100,9 +101,36 @@ def calculate_tail_analytics(
 
     if not isinstance(catalogue_result, CT4CatalogueResult):
         raise TypeError("catalogue_result must be CT4CatalogueResult")
-    config = catalogue_result.simulation_input.tail_configuration
+    simulation_input = catalogue_result.simulation_input
+    return calculate_tail_analytics_from_rows(
+        catalogue_result.annual_rows,
+        config=simulation_input.tail_configuration,
+        relative_tolerance=simulation_input.tolerance_profile.relative_tolerance,
+        absolute_tolerance=simulation_input.tolerance_profile.absolute_currency_tolerance,
+    )
+
+
+def calculate_tail_analytics_from_rows(
+    annual_rows: tuple[CT4AnnualLedgerRow, ...],
+    *,
+    config: TailConfiguration,
+    relative_tolerance: float,
+    absolute_tolerance: float,
+) -> CT4TailAnalytics:
+    """Calculate F19-F24 from a complete ordered annual ledger population."""
+
+    if not isinstance(annual_rows, tuple) or not annual_rows or not all(
+        isinstance(item, CT4AnnualLedgerRow) for item in annual_rows
+    ):
+        raise ValueError("annual_rows must contain at least one CT4AnnualLedgerRow")
+    if tuple(item.annual_trial_id for item in annual_rows) != tuple(range(1, len(annual_rows) + 1)):
+        raise ValueError("annual_rows must be in contiguous annual-trial order")
+    if not isinstance(config, TailConfiguration):
+        raise ValueError("config must be TailConfiguration")
+    relative = _finite_positive("relative_tolerance", relative_tolerance)
+    absolute = _finite_positive("absolute_tolerance", absolute_tolerance)
     perspectives = tuple(
-        _perspective(catalogue_result, perspective, config)
+        _perspective(annual_rows, perspective, config)
         for perspective in (
             MetricPerspective.SUBJECT,
             MetricPerspective.RECOVERY_PRE_ANNUAL_CAPACITY,
@@ -112,20 +140,19 @@ def calculate_tail_analytics(
     subject, recovery, net = (
         item.annual_average_loss for item in perspectives
     )
-    tolerance = catalogue_result.simulation_input.tolerance_profile
     return CT4TailAnalytics(
         perspectives=perspectives,
         aal_reconciliation_passed=math.isclose(
             subject,
             recovery + net,
-            rel_tol=tolerance.relative_tolerance,
-            abs_tol=tolerance.absolute_currency_tolerance,
+            rel_tol=relative,
+            abs_tol=absolute,
         ),
     )
 
 
 def _perspective(
-    result: CT4CatalogueResult,
+    annual_rows: tuple[CT4AnnualLedgerRow, ...],
     perspective: MetricPerspective,
     config: TailConfiguration,
 ) -> PerspectiveAnalytics:
@@ -140,8 +167,8 @@ def _perspective(
             "net_aep_pre_annual_capacity",
         ),
     }[perspective]
-    oep_sample = tuple(float(getattr(row, oep_attribute)) for row in result.annual_rows)
-    aep_sample = tuple(float(getattr(row, aep_attribute)) for row in result.annual_rows)
+    oep_sample = tuple(float(getattr(row, oep_attribute)) for row in annual_rows)
+    aep_sample = tuple(float(getattr(row, aep_attribute)) for row in annual_rows)
     mean = math.fsum(aep_sample) / len(aep_sample)
     squared_deviations = math.fsum((value - mean) ** 2 for value in aep_sample)
     standard_deviation = math.sqrt(squared_deviations / len(aep_sample))

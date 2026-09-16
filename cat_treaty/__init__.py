@@ -53,6 +53,16 @@ from cat_treaty.ct3_metadata import (
     canonicalize_ct3_inputs,
     serialize_ct3_inputs,
 )
+from cat_treaty.ct4_metadata import (
+    CT4_ENGINE_VERSION,
+    CT4_SCHEMA_VERSION,
+    build_ct4_input_hash,
+    build_ct4_run_identity,
+    canonicalize_ct4_inputs,
+    canonicalize_ct4_result,
+    serialize_ct4_inputs,
+    serialize_ct4_result,
+)
 from cat_treaty.ct4_models import (
     CandidateAdmissibility,
     CT4CatalogueResult,
@@ -94,6 +104,7 @@ from cat_treaty.occurrence_definition import (
 )
 from cat_treaty.tail import (
     calculate_tail_analytics,
+    calculate_tail_analytics_from_rows,
     empirical_exceedance_curve,
     empirical_tvar,
     nearest_rank_quantile,
@@ -178,6 +189,8 @@ __all__ = [
     "CT3_ENGINE_VERSION",
     "CT3_SCHEMA_VERSION",
     "CT4AnnualTrialInput",
+    "CT4_ENGINE_VERSION",
+    "CT4_SCHEMA_VERSION",
     "CT4CatalogueResult",
     "CT4AnnualLedgerRow",
     "CT4OccurrenceInput",
@@ -263,11 +276,16 @@ __all__ = [
     "build_loss_basis",
     "build_ct2_run_metadata",
     "build_ct3_run_metadata",
+    "build_ct4_input_hash",
+    "build_ct4_run_identity",
     "canonicalize_ct2_inputs",
     "canonicalize_ct3_inputs",
+    "canonicalize_ct4_inputs",
+    "canonicalize_ct4_result",
     "build_run_metadata",
     "calculate_settlement",
     "calculate_tail_analytics",
+    "calculate_tail_analytics_from_rows",
     "calculate_program_recovery",
     "calculate_share_factor",
     "catalogue_preflight_issues",
@@ -285,5 +303,7 @@ __all__ = [
     "require_ct3_eligible_waterfall",
     "serialize_ct2_inputs",
     "serialize_ct3_inputs",
+    "serialize_ct4_inputs",
+    "serialize_ct4_result",
     "verify_loss_basis_reconciliation",
 ]
