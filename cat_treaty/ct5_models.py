@@ -10,6 +10,7 @@ import math
 from numbers import Real
 
 from cat_treaty.models import CapacityBasis, SettlementMode
+from cat_treaty.ct4_models import CT4CatalogueResult
 
 
 RELATIVE_TOLERANCE = 1e-12
@@ -182,6 +183,9 @@ class CT5TreatyTerms:
         if not 1 <= len(self.layer_terms) <= 4:
             raise ValueError("CT5 requires one to four layer term records")
         _unique("layer_id", tuple(item.layer_id for item in self.layer_terms))
+        modes = {item.settlement_mode for item in self.layer_terms}
+        if len(modes) != 1:
+            raise ValueError("every layer must use one simulation-wide settlement_mode")
         _nonblank("source_reference", self.source_reference)
         _nonblank("rule_reference", self.rule_reference)
 
@@ -775,3 +779,33 @@ class CT5AnnualLedgerRow:
             + values["insurer_net_subject_loss"],
         ):
             raise ValueError("annual F33 subject loss does not reconcile")
+
+
+@dataclass(frozen=True, slots=True)
+class CT5CatalogueResult:
+    ct4_result: CT4CatalogueResult
+    treaty_terms: CT5TreatyTerms
+    occurrence_rows: tuple[CT5EventLedgerRow, ...]
+    annual_rows: tuple[CT5AnnualLedgerRow, ...]
+    completed: bool
+
+    def __post_init__(self) -> None:
+        if not isinstance(self.ct4_result, CT4CatalogueResult):
+            raise ValueError("ct4_result must be a completed CT4CatalogueResult")
+        if not isinstance(self.treaty_terms, CT5TreatyTerms):
+            raise ValueError("treaty_terms must be CT5TreatyTerms")
+        _tuple_of("occurrence_rows", self.occurrence_rows, CT5EventLedgerRow)
+        _tuple_of("annual_rows", self.annual_rows, CT5AnnualLedgerRow)
+        if not isinstance(self.completed, bool) or not self.completed:
+            raise ValueError("CT5 catalogue result must be complete")
+        expected_ids = tuple(range(1, self.ct4_result.simulation_input.trial_count + 1))
+        if tuple(item.annual_trial_id for item in self.annual_rows) != expected_ids:
+            raise ValueError("annual rows must preserve every CT4 trial")
+        flattened = tuple(
+            event for annual in self.annual_rows for event in annual.event_rows
+        )
+        if self.occurrence_rows != flattened:
+            raise ValueError("occurrence_rows must equal flattened annual ledgers")
+        ct4_ids = tuple(item.event_id for item in self.ct4_result.occurrence_rows)
+        if tuple(item.event_id for item in self.occurrence_rows) != ct4_ids:
+            raise ValueError("CT5 occurrence order must match completed CT4 order")

@@ -105,6 +105,7 @@ from cat_treaty.ct5_models import (
     RELATIVE_TOLERANCE,
     CT5AnnualLedgerRow,
     CT5CapacityTransition,
+    CT5CatalogueResult,
     CT5CapacityState,
     CT5EventLedgerRow,
     CT5LayerAnnualSummary,
@@ -137,6 +138,7 @@ from cat_treaty.reinstatement import (
     calculate_reinstatement_time_factor,
 )
 from cat_treaty.ct5_settlement import calculate_ct5_settlement
+from cat_treaty.ct5_simulation import apply_ct5_catalogue
 from cat_treaty.frequency import (
     calculate_frequency_analytics,
     calculate_frequency_analytics_from_rows,
@@ -255,6 +257,7 @@ __all__ = [
     "CT4TailAnalytics",
     "CT5AnnualLedgerRow",
     "CT5CapacityTransition",
+    "CT5CatalogueResult",
     "CT5CapacityState",
     "CT5EventLedgerRow",
     "CT5LayerAnnualSummary",
@@ -355,6 +358,7 @@ __all__ = [
     "apply_annual_capacity",
     "apply_contractual_shares",
     "apply_catalogue_simulation",
+    "apply_ct5_catalogue",
     "apply_inuring_waterfall",
     "build_loss_basis",
     "build_ct2_run_metadata",
