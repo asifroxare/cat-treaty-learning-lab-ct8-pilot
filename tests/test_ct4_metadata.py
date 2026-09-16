@@ -198,6 +198,7 @@ def test_completed_catalogue_identity_is_exactly_reproducible() -> None:
         first.result_hash = "x" * 64  # type: ignore[misc]
     payload = canonicalize_ct4_result(result, analytics)
     assert "gross_contractual_recovery_pre_annual_capacity" in payload["occurrence_rows"][0]  # type: ignore[index]
+    assert payload["frequencies"]["annual_attachment_frequency"]["denominator_label"] == "declared annual trials"  # type: ignore[index]
 
 
 def test_result_hash_is_bound_to_input_hash_and_versions() -> None:
