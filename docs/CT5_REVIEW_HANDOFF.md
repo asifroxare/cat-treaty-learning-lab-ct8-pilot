@@ -1,4 +1,7 @@
-# CT5 Independent Review Handoff
+# CT5 Independent Review Handoff (Superseded)
+
+This pre-freeze handoff is retained for provenance. The review is complete;
+see `CT5_AUDIT_DISPOSITION.md` and the frozen CT5 v1.0 specification.
 
 Please review `CT5_IMPLEMENTATION_SPEC.md` as a proposed actuarial and software
 contract, not as implemented behavior.
@@ -13,8 +16,8 @@ Focus especially on:
 - F31 paid-separately versus deducted presentation;
 - F32–F36 event, annual, capacity and reserve reconciliations;
 - utilization denominators and zero-capacity conventions;
-- the five post-capacity analytics perspectives; and
-- the sufficiency of G47–G62.
+- the six post-capacity analytics perspectives; and
+- the sufficiency of G47–G68.
 
 For each finding, provide:
 

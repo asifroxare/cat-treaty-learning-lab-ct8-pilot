@@ -1,8 +1,11 @@
-# Catastrophe Treaty Learning Lab — CT5 Implementation Specification
+# Catastrophe Treaty Learning Lab — CT5 Implementation Specification — Frozen v1.0
 
-**Milestone:** CT5 — Annual Capacity, Reinstatements and Settlement  
-**Version:** 1.0-draft  
-**Status:** Independent review required; not frozen; no implementation authorized  
+**Milestone:** CT5 — Annual Capacity, Reinstatements and Settlement
+
+**Version:** 1.0
+
+**Status:** Frozen; implementation authorized subject to the checkpoint gates
+
 **Product:** EdInsured Catastrophe Treaty Learning Lab
 
 ## 1. Authority and dependency chain
@@ -21,8 +24,9 @@ pre-annual-capacity layer recoveries and empirical tail conventions. CT5 may
 constrain those recoveries through annual capacity; it may not recreate CT2,
 CT3 or CT4 occurrence logic.
 
-This draft must be independently reviewed and revised as necessary. CT5 coding
-is prohibited until the document is explicitly frozen.
+The independent review findings are resolved in
+`docs/CT5_AUDIT_DISPOSITION.md`. This frozen document is the implementation
+authority for CT5.
 
 ## 2. Purpose
 
@@ -34,7 +38,7 @@ It teaches and calculates:
 3. how reinstatement premium is calculated by amount and declared time basis;
 4. why gross recovery, premium payable and cash settlement are different
    quantities;
-5. how capacity exhaustion reshapes OEP, AEP and insurer-net tails; and
+5. how capacity exhaustion reshapes OEP, AEP, insurer-net and recovery-shortfall tails; and
 6. how every result reconciles to the CT4 pre-capacity entitlement.
 
 CT5 is a treaty-operation simulator, not a pricing model or claims-adjudication
@@ -66,7 +70,8 @@ system.
 - one layer borrowing capacity from another;
 - reinstatement of capacity within the same occurrence;
 - hours-clause regrouping beyond the already-elected CT4 result;
-- mid-year changes to layers, shares, reinstatement wording or premium terms;
+- mid-year or per-event changes to layers, ceded shares, placement shares,
+  reinstatement wording or premium terms;
 - multi-currency conversion or foreign-exchange effects;
 - brokerage, taxes, levies, profit commission and premium-payment timing;
 - minimum/deposit premium true-ups;
@@ -85,8 +90,16 @@ CT5 accepts only a completed, hashed CT4 result whose:
 - occurrence ordering is frozen;
 - hours-clause election, if applicable, is complete and valid;
 - every occurrence exposes CT3 layer results; and
-- recovery field is
+- every occurrence exposes exactly one occurrence-level CT4 `subject_loss`,
+  shared unchanged by every layer row for that occurrence; and
+- each CT3 layer row exposes the recovery field
   `gross_contractual_recovery_pre_annual_capacity`.
+
+The exact field name `subject_loss` is part of the CT4-to-CT5 schema contract.
+A missing or renamed field is rejected; CT5 may not reconstruct it from layer
+recoveries. Every accepted fixture must reconcile its occurrence-level
+`subject_loss` to the frozen CT4 occurrence and annual ledgers before capacity
+calculation begins.
 
 A raw event loss, raw annual loss, unverified CT3 result or un-hashed CT4
 ledger is rejected. CT5 never accepts an annual aggregate as a substitute for
@@ -305,6 +318,10 @@ still restoring and consuming capacity.
 If (I_i=0), recovery, reserve, reinstatement and premium are all zero; no
 division is performed.
 
+One event may allocate reinstatement across more than one tranche. F30 is
+applied independently to each allocation row using that tranche's own rate and
+time basis; the event premium is then the `math.fsum` of those rows.
+
 ## 11. Three-way settlement
 
 CT5 preserves three separately named fields:
@@ -392,7 +409,7 @@ hashes are emitted.
 CT5 reports, by layer and annual trial:
 
 \[
-available\_capacity\_utilization=
+realized\_capacity\_utilization=
 \frac{\sum_jR_{yji}}{I_i+\sum_jJ_{yji}}
 \]
 
@@ -403,7 +420,12 @@ reinstatement\_reserve\_utilization=
 \frac{\sum_jJ_{yji}}{I_in_i}
 \]
 
-when the respective denominator is positive.
+when the respective denominator is positive. Its denominator is the capacity
+actually realized during that trial: initial capacity plus reinstatements
+triggered. By contrast, `reinstatement_reserve_utilization` uses the nominal
+reinstatement reserve purchased at inception. The two percentages answer
+different questions and must not be presented as directly comparable
+fractions of one common denominator.
 
 For zero initial payable capacity, utilization is null with
 `not_applicable_zero_capacity`. When initial capacity is positive but there are
@@ -464,8 +486,20 @@ Annual samples include exactly `trial_count` observations for:
 - subject loss;
 - gross contractual recovery after annual capacity;
 - insurer net subject loss after annual capacity;
-- reinstatement premium payable; and
-- net cash settlement.
+- reinstatement premium payable;
+- net cash settlement; and
+- capacity-constrained recovery shortfall.
+
+For each occurrence and annual trial:
+
+\[
+K_{yj}=\sum_i(U_{yji}-R_{yji}),\qquad K_y=\sum_jK_{yj}
+\tag{F37}
+\]
+
+`capacity_constrained_recovery_shortfall` is non-negative and receives its own
+OEP sample (`max_j K_yj`) and AEP sample (`K_y`). It is not silently merged
+with insurer net loss. CT5 therefore exposes six post-capacity perspectives.
 
 Recovery and insurer-net OEP are recomputed from CT5 event rows. Premium and
 cash-settlement OEP/AEP are separately labelled. Negative net cash settlement
@@ -485,7 +519,7 @@ them.
 
 ## 16. Metadata and deterministic hashing
 
-Frozen defaults proposed for review:
+Frozen defaults:
 
 - `CT5_ENGINE_VERSION = "ct5.0.0"`;
 - `CT5_SCHEMA_VERSION = "ct5.0"`;
@@ -500,7 +534,7 @@ Input identity includes:
 - every ordered tranche rate and time basis;
 - treaty-term boundaries;
 - settlement mode;
-- numerical tolerances; and
+- the fixed numerical-tolerance profile; and
 - CT5 engine/schema versions.
 
 Result identity includes canonical layer/event/annual ledgers, post-capacity
@@ -509,6 +543,17 @@ analytics, utilization statuses, warnings, CT5 versions and input hash.
 Descriptions, explanation wording, number formatting and UI state are
 excluded. Non-contractual input order is canonicalized; tranche order is never
 canonicalized away because it changes premium.
+
+The CT5 v1 tolerance profile is fixed and is not user-configurable:
+
+- relative tolerance: `1e-12`;
+- absolute currency tolerance: `1e-6`; and
+- reconciliation rule: `math.isclose(left, right, rel_tol=1e-12,
+  abs_tol=1e-6)`.
+
+Equality at the tolerance boundary passes; a difference outside both bounds
+fails the complete run. Tolerance never repairs negative, non-finite or
+otherwise invalid values. The profile is version-bound and hash-significant.
 
 ## 17. Validation and fail-loudly rules
 
@@ -527,6 +572,9 @@ canonicalized away because it changes premium.
   the initial occurrence limit;
 - later tranches cannot precede earlier tranches;
 - no event, layer or annual reconciliation may fail; and
+- reconciliation uses only the fixed CT5 v1 tolerance profile in Section 16;
+  exact-boundary differences pass and differences outside both bounds fail;
+  and
 - one invalid occurrence or term record blocks the entire CT5 run without
   partial analytics.
 
@@ -571,6 +619,12 @@ G01–G46 retain their frozen meanings. CT5 adds:
 | G60 | Input permutation | Non-contractual term input order does not change ledgers or hashes |
 | G61 | Hours-clause entry | CT5 consumes only the valid CT4 elected occurrences |
 | G62 | Invalid event time | Out-of-term event blocks the complete run before capacity calculation |
+| G63 | One event crosses two tranches | Allocation uses the remainder of tranche one and then tranche two; each portion uses its own rate and time basis |
+| G64 | Equal event timestamps | Stable CT4 sequence/ID determines which event consumes initial versus restored capacity |
+| G65 | Negative cash settlement | A valid deducted-mode premium above recovery produces a negative, unfloored settlement |
+| G66 | Partial amount plus time proration | F30 applies amount and remaining-term fractions multiplicatively |
+| G67 | No same-event reinstatement benefit | Recovery is capped by active capacity before restoration; restored capacity is available only to the next ordered event |
+| G68 | Capacity-shortfall tails | Event and annual shortfall samples contain every trial and reconcile to pre-capacity less post-capacity recovery |
 
 ### Hand-worked core example
 
@@ -592,6 +646,49 @@ reinstatement and original layer premium USD 2m.
 - Paid-separately cash settlement: USD 40m.
 - Deducted cash settlement: USD 38m.
 
+### Hand-worked two-tranche allocation
+
+A layer has initial capacity USD 20m and original premium USD 2m. Before the
+current event, USD 15m of tranche 1 has already been used. The current event
+reinstates USD 10m. The remaining USD 5m of tranche 1 is priced at 50% with
+`full_time`; the next USD 5m is allocated to tranche 2, priced at 100% with
+`pro_rata_remaining_term`. At a 25% remaining-term factor:
+
+\[
+RP_1=2m(0.50)(5m/20m)(1)=0.25m
+\]
+
+\[
+RP_2=2m(1.00)(5m/20m)(0.25)=0.125m
+\]
+
+Current-event premium is USD 0.375m. A single blended rate or time factor is
+prohibited.
+
+### Utilization denominator illustration
+
+If annual recovery is USD 25m and USD 25m is reinstated on the same USD 20m
+initial layer with two purchased reinstatements, then:
+
+- realized capacity utilization is `25 / (20 + 25) = 55.5556%`; and
+- reinstatement-reserve utilization is `25 / (20 × 2) = 62.5%`.
+
+The first measures use of capacity that became available in the realized
+trial; the second measures use of nominal reinstatement reserve purchased.
+
+### Additional binding examples
+
+- **G65:** with USD 20m initial capacity, USD 10m original premium, a 300%
+  full-time tranche and a USD 1m reinstatement, premium is USD 1.5m. In
+  deducted mode, USD 1m recovery therefore produces USD -0.5m net cash
+  settlement; no floor applies.
+- **G66:** with USD 20m initial capacity, USD 2m premium, a 100% tranche, USD
+  8m reinstated and a 25% remaining-term factor, premium is
+  `2m × (8m/20m) × 25% = 0.2m`.
+- **G67:** with USD 20m active capacity and USD 35m pre-capacity recovery, the
+  triggering occurrence recovers only USD 20m. Restoration happens afterward
+  and can benefit only the next ordered occurrence.
+
 ## 20. Acceptance gates
 
 | Gate | Pass condition |
@@ -609,7 +706,8 @@ reinstatement and original layer premium USD 2m.
 | Credibility | CT4 empirical-tail warnings remain unchanged in meaning |
 | Metadata | Contractual/version changes alter hashes; display changes do not |
 | Product boundary | No CT5 module imports pricing, API or frontend engines |
-| Golden cases | G47–G62 pass with permanent trace IDs |
+| Tolerance | Exact-boundary cases pass and just-outside cases fail under the frozen profile |
+| Golden cases | G47–G68 pass with permanent trace IDs |
 | Distribution | Fresh extraction installs, passes the full suite and is Git-clean |
 
 ## 21. Planned implementation units
@@ -630,13 +728,13 @@ reinstatement and original layer premium USD 2m.
 | `tests/test_ct5_simulation.py` | F32–F36 ordering and reconciliations |
 | `tests/test_ct5_analytics.py` | Post-capacity OEP/AEP and annual denominators |
 | `tests/test_ct5_metadata.py` | Hash, permutation and version gates |
-| `tests/test_ct5_golden_cases.py` | G47–G62 consolidated acceptance |
+| `tests/test_ct5_golden_cases.py` | G47–G68 consolidated acceptance |
 | `tests/test_ct5_boundaries.py` | Source, product and milestone boundaries |
 
 ## 22. Proposed implementation order
 
-1. Independently review this draft and resolve every structural or formula
-   finding.
+1. Preserve the frozen review disposition and resolve no formula by code-side
+   reinterpretation.
 2. Freeze CT5 Specification v1.0 and record an audit-disposition document.
 3. Implement immutable CT5 terms, state and ledger models.
 4. Implement F25–F29 annual capacity and ordered tranche allocation.
@@ -645,45 +743,21 @@ reinstatement and original layer premium USD 2m.
 7. Implement F32–F36 annual orchestration and reconciliations.
 8. Implement post-capacity analytics and learning explanations.
 9. Implement CT5 canonical metadata and hashes.
-10. Consolidate G47–G62 and run the full regression/distribution gate.
+10. Consolidate G47–G68 and run the full regression/distribution gate.
 
-## 23. Reviewer decisions requested
+## 23. Frozen review decisions
 
-The independent reviewer should answer explicitly:
-
-1. Is payable-placed-share capacity the correct continuation of CT1 and CT4?
-2. Does F26 correctly prevent reinstated capacity from benefiting the same
-   occurrence?
-3. Do F27–F29 handle partial final reinstatements without hidden over-restoration?
-4. Should automatic reinstatement and premium apply after the final observed
-   event, as specified?
-5. Is sequential tranche allocation sufficiently explicit when rates differ?
-6. Is original layer premium correctly required as an external contractual
-   input rather than inferred from CT4?
-7. Is the remaining-term factor in F30 contractually cautious and correctly
-   bounded by fail-fast timestamp validation?
-8. Should v1 support any other time basis, or is `full_time` plus
-   `pro_rata_remaining_term` the correct boundary?
-9. Is negative net cash settlement acceptable without flooring in the advanced
-   deduction presentation?
-10. Are F32–F36 sufficient to reconcile recovery, capacity, reserve and insurer
-    net independently?
-11. Are utilization denominators and zero/not-applicable statuses unambiguous?
-12. Should post-capacity analytics include any perspective beyond the five
-    declared annual samples?
-13. Are G47–G62 sufficient to prevent double shares, same-event
-    reinstatement, tranche-order and settlement defects?
-14. Are the exclusions appropriate for CT5, particularly aggregate features,
-    cross-layer capacity and premium taxes/brokerage?
-15. Is the proposed metadata boundary sufficient to prove that a CT5 result is
-    tied to one exact completed CT4 result?
+The independent review confirms the payable-placed-share basis, F25–F36,
+post-event automatic reinstatement, premium after the final observed event,
+sequential tranche allocation, explicit original layer premium, fail-fast
+remaining-term validation, the two declared time bases, unfloored negative
+cash settlement, independent reconciliation controls, exclusions and the CT4
+identity boundary. The audit also freezes F37 as a sixth post-capacity learning
+perspective and G63–G68 as mandatory regressions.
 
 ## 24. Freeze rule
 
-Independent approval of this draft does not itself authorize coding if the
-review contains unresolved findings. After every accepted change is folded in,
-the final document must be relabelled:
-
-`CT5 Implementation Specification — Frozen v1.0`
-
-Only that frozen commit authorizes CT5 implementation.
+This document is frozen as `CT5 Implementation Specification — Frozen v1.0`.
+Any structural, formula, schema, tolerance or golden-case change requires a
+versioned addendum and independent review. This frozen commit authorizes CT5
+implementation in the checkpoint order in Section 22.
