@@ -1,2 +1,2 @@
-﻿# CT1 uses the Python standard library only.
-# Runtime dependencies will be added only when a later milestone requires them.
+﻿# CT6 strict API wire models.
+pydantic>=2.13,<3

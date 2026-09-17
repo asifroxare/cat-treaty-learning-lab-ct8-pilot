@@ -7,7 +7,7 @@ name = "edinsured-cat-treaty-learning-lab"
 version = "0.1.0"
 description = "Backend-first catastrophe treaty learning and experimentation lab"
 requires-python = ">=3.12,<3.15"
-dependencies = []
+dependencies = ["pydantic>=2.13,<3"]
 
 [tool.setuptools.packages.find]
 include = ["cat_treaty*"]

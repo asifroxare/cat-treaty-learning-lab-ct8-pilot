@@ -123,6 +123,20 @@ from cat_treaty.ct5_models import (
     TrancheCapacityUsage,
     TrancheAllocation,
 )
+from cat_treaty.ct6_models import (
+    CT6_API_VERSION,
+    CT6_SCHEMA_VERSION,
+    CatalogueRunRequest,
+    CatalogueSourceMode,
+    HoursRunRequest,
+    ResponseDetail,
+)
+from cat_treaty.ct6_adapters import (
+    AdaptedCatalogueRequest,
+    AdaptedHoursRequest,
+    adapt_catalogue_request,
+    adapt_hours_request,
+)
 from cat_treaty.occurrence_definition import (
     evaluate_hours_clause_scenario,
     generate_candidate_sets,
@@ -307,6 +321,14 @@ __all__ = [
     "CT5_ENGINE_VERSION",
     "CT5_SCHEMA_VERSION",
     "CT5RunIdentity",
+    "CT6_API_VERSION",
+    "CT6_SCHEMA_VERSION",
+    "CatalogueRunRequest",
+    "CatalogueSourceMode",
+    "HoursRunRequest",
+    "ResponseDetail",
+    "AdaptedCatalogueRequest",
+    "AdaptedHoursRequest",
     "CatLayerInput",
     "CatLayerResult",
     "ExplanationFact",
@@ -399,6 +421,8 @@ __all__ = [
     "apply_contractual_shares",
     "apply_catalogue_simulation",
     "apply_ct5_catalogue",
+    "adapt_catalogue_request",
+    "adapt_hours_request",
     "prepare_ct5_hours_clause_entry",
     "apply_inuring_waterfall",
     "build_loss_basis",
