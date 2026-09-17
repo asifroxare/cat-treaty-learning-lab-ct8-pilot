@@ -137,6 +137,7 @@ from cat_treaty.ct6_adapters import (
     adapt_catalogue_request,
     adapt_hours_request,
 )
+from cat_treaty.ct6_orchestration import CT6CatalogueRunResult, run_catalogue
 from cat_treaty.occurrence_definition import (
     evaluate_hours_clause_scenario,
     generate_candidate_sets,
@@ -323,6 +324,7 @@ __all__ = [
     "CT5RunIdentity",
     "CT6_API_VERSION",
     "CT6_SCHEMA_VERSION",
+    "CT6CatalogueRunResult",
     "CatalogueRunRequest",
     "CatalogueSourceMode",
     "HoursRunRequest",
@@ -423,6 +425,7 @@ __all__ = [
     "apply_ct5_catalogue",
     "adapt_catalogue_request",
     "adapt_hours_request",
+    "run_catalogue",
     "prepare_ct5_hours_clause_entry",
     "apply_inuring_waterfall",
     "build_loss_basis",

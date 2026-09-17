@@ -4,6 +4,7 @@ import math
 
 from cat_treaty.annual_capacity import apply_annual_capacity, initialize_annual_capacity
 from cat_treaty.ct4_models import CT4CatalogueResult, HoursClauseResult, HoursElectionStatus
+from cat_treaty.ct3_models import CatLayerInput
 from cat_treaty.ct5_models import (
     CT5AnnualLedgerRow,
     CT5CatalogueResult,
@@ -22,6 +23,7 @@ def apply_ct5_catalogue(
     *,
     ct4_result: CT4CatalogueResult,
     treaty_terms: CT5TreatyTerms,
+    program_layers: tuple[CatLayerInput, ...] | None = None,
 ) -> CT5CatalogueResult:
     """Apply CT5 statefully to every frozen CT4 catalogue occurrence."""
 
@@ -36,17 +38,32 @@ def apply_ct5_catalogue(
     }
     if set(event_inputs) != {item.event_id for item in ct4_result.occurrence_rows}:
         raise ValueError("CT4 input events and completed occurrence rows do not match")
-    if not event_inputs:
-        raise ValueError("CT5 requires at least one CT4 occurrence to establish layer terms")
-
-    first_event = next(iter(event_inputs.values()))
-    reference_layers = {
-        item.layer_id: item for item in first_event.program_input.layers
-    }
+    if program_layers is not None and (
+        not isinstance(program_layers, tuple)
+        or not 1 <= len(program_layers) <= 4
+        or not all(isinstance(item, CatLayerInput) for item in program_layers)
+    ):
+        raise ValueError("program_layers must contain one to four CatLayerInput values")
+    if event_inputs:
+        first_event = next(iter(event_inputs.values()))
+        reference_layers = {
+            item.layer_id: item for item in first_event.program_input.layers
+        }
+        if program_layers is not None and tuple(reference_layers.values()) != program_layers:
+            raise ValueError("program_layers must match the frozen CT4 program")
+        program_id = first_event.program_input.program_id
+    elif program_layers is not None:
+        reference_layers = {item.layer_id: item for item in program_layers}
+        program_id = treaty_terms.program_id
+    else:
+        raise ValueError(
+            "CT5 requires at least one CT4 occurrence or explicit program_layers "
+            "when every trial is empty"
+        )
     term_by_layer = {item.layer_id: item for item in treaty_terms.layer_terms}
     if set(reference_layers) != set(term_by_layer):
         raise ValueError("every CT3 layer requires exactly one CT5 term record")
-    if first_event.program_input.program_id != treaty_terms.program_id:
+    if program_id != treaty_terms.program_id:
         raise ValueError("CT3 program_id must match CT5 treaty terms")
 
     annual_rows: list[CT5AnnualLedgerRow] = []
