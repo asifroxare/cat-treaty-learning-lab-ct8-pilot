@@ -3,11 +3,12 @@
 import math
 
 from cat_treaty.annual_capacity import apply_annual_capacity, initialize_annual_capacity
-from cat_treaty.ct4_models import CT4CatalogueResult
+from cat_treaty.ct4_models import CT4CatalogueResult, HoursClauseResult, HoursElectionStatus
 from cat_treaty.ct5_models import (
     CT5AnnualLedgerRow,
     CT5CatalogueResult,
     CT5EventLedgerRow,
+    CT5HoursClauseEntry,
     CT5LayerAnnualSummary,
     CT5LayerEventLedgerRow,
     CT5TreatyTerms,
@@ -185,6 +186,28 @@ def apply_ct5_catalogue(
     )
 
 
+def prepare_ct5_hours_clause_entry(result: HoursClauseResult) -> CT5HoursClauseEntry:
+    """Freeze only the valid elected CT4 occurrences for later CT5 processing."""
+
+    if not isinstance(result, HoursClauseResult):
+        raise ValueError("result must be HoursClauseResult")
+    if result.election_status is not HoursElectionStatus.SELECTED or result.annual_row is None:
+        raise ValueError("blocked hours-clause result cannot enter CT5")
+    windows = {item.candidate_id: item for item in result.candidate_windows}
+    event_times = []
+    for row in result.selected_occurrence_rows:
+        candidate_id = row.event_id.rsplit(":", 1)[-1]
+        window = windows.get(candidate_id)
+        if window is None:
+            raise ValueError("elected occurrence has no matching CT4 candidate window")
+        event_times.append(float(window.start))
+    return CT5HoursClauseEntry(
+        ct4_result=result,
+        occurrence_rows=result.selected_occurrence_rows,
+        event_times=tuple(event_times),
+    )
+
+
 def _annual_layer_summary(state) -> CT5LayerAnnualSummary:
     realized_denominator = state.initial_capacity + state.cumulative_reinstated
     if realized_denominator == 0:
@@ -220,4 +243,3 @@ def _annual_layer_summary(state) -> CT5LayerAnnualSummary:
         reinstatement_reserve_utilization=reserve_value,
         reinstatement_reserve_utilization_status=reserve_status,
     )
-

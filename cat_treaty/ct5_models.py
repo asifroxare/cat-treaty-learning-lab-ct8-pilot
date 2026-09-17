@@ -10,7 +10,7 @@ import math
 from numbers import Real
 
 from cat_treaty.models import CapacityBasis, SettlementMode
-from cat_treaty.ct4_models import CT4CatalogueResult
+from cat_treaty.ct4_models import CT4CatalogueResult, CT4OccurrenceLedgerRow, HoursClauseResult
 
 
 RELATIVE_TOLERANCE = 1e-12
@@ -809,3 +809,21 @@ class CT5CatalogueResult:
         ct4_ids = tuple(item.event_id for item in self.ct4_result.occurrence_rows)
         if tuple(item.event_id for item in self.occurrence_rows) != ct4_ids:
             raise ValueError("CT5 occurrence order must match completed CT4 order")
+
+
+@dataclass(frozen=True, slots=True)
+class CT5HoursClauseEntry:
+    ct4_result: HoursClauseResult
+    occurrence_rows: tuple[CT4OccurrenceLedgerRow, ...]
+    event_times: tuple[float, ...]
+
+    def __post_init__(self) -> None:
+        if not isinstance(self.ct4_result, HoursClauseResult):
+            raise ValueError("ct4_result must be HoursClauseResult")
+        _tuple_of("occurrence_rows", self.occurrence_rows, CT4OccurrenceLedgerRow)
+        if self.occurrence_rows != self.ct4_result.selected_occurrence_rows:
+            raise ValueError("CT5 hours entry must contain only elected CT4 occurrences")
+        if not isinstance(self.event_times, tuple) or len(self.event_times) != len(self.occurrence_rows):
+            raise ValueError("event_times must align with elected occurrences")
+        for value in self.event_times:
+            _finite("event_time", value)

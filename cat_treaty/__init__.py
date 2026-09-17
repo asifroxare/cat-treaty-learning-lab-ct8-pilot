@@ -108,6 +108,7 @@ from cat_treaty.ct5_models import (
     CT5CatalogueResult,
     CT5CapacityState,
     CT5EventLedgerRow,
+    CT5HoursClauseEntry,
     CT5LayerAnnualSummary,
     CT5LayerEventLedgerRow,
     CT5LayerTerms,
@@ -138,7 +139,7 @@ from cat_treaty.reinstatement import (
     calculate_reinstatement_time_factor,
 )
 from cat_treaty.ct5_settlement import calculate_ct5_settlement
-from cat_treaty.ct5_simulation import apply_ct5_catalogue
+from cat_treaty.ct5_simulation import apply_ct5_catalogue, prepare_ct5_hours_clause_entry
 from cat_treaty.ct5_analytics import calculate_ct5_analytics
 from cat_treaty.ct5_analytics_models import (
     CT5Analytics,
@@ -162,6 +163,7 @@ from cat_treaty.ct5_metadata import (
     serialize_ct5_result,
     validate_ct4_identity,
 )
+from cat_treaty.golden_cases import CT5_GOLDEN_CASE_EVIDENCE, CT5GoldenCaseEvidence
 from cat_treaty.frequency import (
     calculate_frequency_analytics,
     calculate_frequency_analytics_from_rows,
@@ -284,6 +286,9 @@ __all__ = [
     "CT5CatalogueResult",
     "CT5CapacityState",
     "CT5EventLedgerRow",
+    "CT5HoursClauseEntry",
+    "CT5GoldenCaseEvidence",
+    "CT5_GOLDEN_CASE_EVIDENCE",
     "CT5ExceedancePoint",
     "CT5LayerAnnualSummary",
     "CT5LayerExhaustionMetric",
@@ -394,6 +399,7 @@ __all__ = [
     "apply_contractual_shares",
     "apply_catalogue_simulation",
     "apply_ct5_catalogue",
+    "prepare_ct5_hours_clause_entry",
     "apply_inuring_waterfall",
     "build_loss_basis",
     "build_ct2_run_metadata",
