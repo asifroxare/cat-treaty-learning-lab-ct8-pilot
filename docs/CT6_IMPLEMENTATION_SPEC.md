@@ -1,8 +1,9 @@
 # Catastrophe Treaty Learning Lab — CT6 FastAPI Contract and Backend Orchestration Specification
 
 **Milestone:** CT6 — FastAPI Contract and Backend Orchestration  
-**Version:** 0.9-review  
-**Status:** Draft for independent validation; implementation is not authorized  
+**Version:** 1.0
+
+**Status:** Frozen after independent validation; implementation authorized subject to checkpoint gates
 **Product:** EdInsured Catastrophe Treaty Learning Lab
 
 ## 1. Authority and dependency chain
@@ -155,8 +156,11 @@ asking the client to manufacture calculated CT2–CT5 results.
 
 - `simulation_id`;
 - `trial_count`;
+- `catalogue_source_mode`, exactly `generated` or `supplied`;
 - `catalogue_version` and `source_version`;
-- `simulation_seed`, nullable when the supplied catalogue is not generated;
+- `simulation_seed`, required as a non-negative integer when
+  `catalogue_source_mode=generated` and required to be null when
+  `catalogue_source_mode=supplied`;
 - CT4 tail configuration; and
 - the frozen numerical-tolerance profile, which must equal the supported
   profile rather than being user-adjustable.
@@ -174,6 +178,12 @@ and preserved. Each occurrence supplies:
 The client does not supply `LossBasisResult`, `InuringWaterfallResult`, CT3
 recovery, CT4 ledger, CT5 ledger, analytics or hashes. CT6 constructs those by
 calling the accepted engines.
+
+`catalogue_source_mode` records provenance and validates seed shape; it does
+not authorize CT6 to generate a catalogue. In v1, both modes carry explicit
+annual trials and occurrence rows. A `generated` request declares that those
+rows came from the identified deterministic generator/seed; a `supplied`
+request declares an external fixed catalogue.
 
 ### 8.3 Program and annual-capacity terms
 
@@ -231,9 +241,31 @@ For catalogue mode the orchestrator performs exactly:
 15. build explanations exclusively from structured domain facts; and
 16. serialize the response.
 
-Hours-clause mode replaces steps 2–10 with the frozen CT4 hours-clause
-generation, admissibility and election flow, while retaining identity checks
-and the rule that only elected rows enter CT5.
+For hours-clause mode the orchestrator performs exactly:
+
+1. parse the strict hours wire DTO;
+2. construct and validate the supplied CT2 loss-basis/inuring source contract;
+3. build CT2 results and metadata from that disclosed source, without
+   fabricating a zero-inuring or replacement loss basis;
+4. construct and validate the CT3 program-terms source and geometry;
+5. construct the CT4 hours-clause scenario and terms;
+6. generate all candidate windows and candidate sets;
+7. evaluate temporal, geographic, peril, causal, non-overlap and treaty-term
+   admissibility, retaining exclusion codes and reasons;
+8. calculate subject loss and contractual recovery for valid candidates only;
+9. apply the selected contractually authorized election method and tie-breaks;
+10. block without downstream results if no valid election exists;
+11. freeze only the elected CT4 occurrence rows and elected-window times;
+12. calculate CT4 annual/tail results and build the CT4 identity;
+13. validate matching CT5 terms and apply annual capacity, reinstatement and
+    settlement to the elected rows in deterministic order;
+14. calculate CT5 analytics, reproduce CT4 identity and build CT5 identity;
+15. build structured explanations from domain facts; and
+16. serialize the response.
+
+The adapter test suite must prove that changing or removing the disclosed
+hours source loss basis/inuring record fails validation rather than causing the
+API to invent an assumed record.
 
 Any failed step terminates the run. The API never returns a partial success
 containing authoritative downstream figures.
@@ -332,6 +364,24 @@ exclusion/election evidence and identities. Full internal results are still
 calculated before hashing. Therefore `full` and `summary` produce identical
 CT4/CT5 hashes.
 
+### 11.8 Frozen authoritative field names
+
+The following names are exact API response fields, not illustrative labels:
+
+| Section | Exact fields |
+|---|---|
+| `identity` | `simulation_id`, `ct4_input_hash`, `ct4_result_hash`, `ct5_input_hash`, `ct5_result_hash` |
+| `pre_capacity.occurrence_rows[]` | `subject_loss`, `gross_contractual_recovery_pre_annual_capacity`, `insurer_net_loss_pre_annual_capacity` |
+| `pre_capacity.annual_rows[]` | `subject_loss`, `gross_contractual_recovery_pre_annual_capacity`, `insurer_net_loss_pre_annual_capacity`, `maximum_occurrence_recovery_pre_annual_capacity` |
+| `post_capacity.occurrence_rows[]` | `subject_loss`, `gross_contractual_recovery_pre_annual_capacity`, `gross_contractual_recovery`, `capacity_constrained_recovery_shortfall`, `insurer_net_subject_loss`, `reinstatement_premium_payable`, `net_cash_settlement` |
+| `post_capacity.annual_rows[]` | `subject_loss`, `gross_contractual_recovery`, `capacity_constrained_recovery_shortfall`, `insurer_net_subject_loss`, `reinstatement_premium_payable`, `net_cash_settlement`, `maximum_occurrence_recovery` |
+| `post_capacity.layer_event_rows[]` | `pre_annual_capacity_recovery`, `active_capacity_before`, `gross_contractual_recovery`, `capacity_constrained_recovery_shortfall`, `active_capacity_after_recovery`, `amount_reinstated`, `active_capacity_for_next_event`, `reinstatement_premium_payable` |
+
+The three settlement values are always separate. `net_cash_settlement` never
+replaces or aliases `gross_contractual_recovery`. Fields must not be shortened
+to `recovery`, `net`, `premium`, `treaty_recovery` or
+`annual_treaty_recovery` in authoritative response models.
+
 ## 12. Error contract
 
 All non-success bodies use a Problem Details-style object:
@@ -375,13 +425,35 @@ Validation errors are deterministically ordered first by request path and then
 by stable code. One request may disclose multiple independently detectable
 input errors, but no engine calculation proceeds after validation failure.
 
+Validation/status precedence is frozen:
+
+1. unreadable body, invalid media type or malformed JSON → 400;
+2. if a parsed top-level `api_schema_version` is a string but is unsupported →
+   409;
+3. missing or non-string `api_schema_version`, DTO type/shape failure or an
+   unknown field → 422 `CT6_SCHEMA_VALIDATION`;
+4. valid DTO that violates a domain rule → 422 `CT6_DOMAIN_VALIDATION`;
+5. valid domain input blocked by geometry, preflight or election → 422
+   `CT6_CONTRACT_BLOCKED`; and
+6. unexpected failure after those gates → 500.
+
+An unsupported string version therefore takes precedence over other DTO
+errors so the client can first select a supported contract. A wrong-typed
+version is a schema error, not a version conflict.
+
+Every public `message`, `title` and `detail` is selected from a reviewed static
+message catalogue keyed by stable error code. Internal exception text and
+client values are never interpolated into these fields. Safe structured facts
+may appear only in separately typed error metadata approved by the response
+schema.
+
 ## 13. Limits and execution policy
 
-Proposed CT6 v1 API limits:
+Frozen CT6 v1 API limits:
 
 - request body: 25 MiB;
-- catalogue trials: 1–50,000;
-- total catalogue occurrences: 0–250,000;
+- catalogue trials: 1–10,000;
+- total catalogue occurrences: 0–100,000;
 - layers: 1–4;
 - hours-clause components: 1–12;
 - full-detail occurrence rows: at most 25,000; and
@@ -394,6 +466,16 @@ asynchronous milestone, not partially implemented in CT6.
 
 These are API/deployment protection limits, not actuarial assumptions and not
 inputs to deterministic hashes.
+
+The full-detail cap is intentionally a presentation constraint: identical
+contractual input can succeed with `summary` and receive 413 with `full` when
+the response would exceed 25,000 occurrence rows. The rejected full request
+has no authoritative response identity; when summary succeeds, its internally
+calculated CT4/CT5 hashes are the same hashes a permissible full projection
+would have produced. This does not violate deterministic calculation.
+
+The trial/occurrence limits apply only to catalogue mode. Hours-clause mode is
+separately and completely bounded to one annual trial and 1–12 components.
 
 ## 14. Health and capability contracts
 
@@ -485,6 +567,7 @@ G01–G68 retain their frozen meanings. CT6 adds:
 | G80 | Credibility warnings | Valid run returns 200 with all cumulative warnings |
 | G81 | API limit | Oversized full request fails explicitly; no silent truncation/downgrade |
 | G82 | Internal failure containment | Sanitized 500 response and no partial actuarial payload |
+| G83 | API version conflict | Unsupported string schema version returns 409; missing/wrong-typed version returns 422 |
 
 ## 20. Required test modules
 
@@ -496,7 +579,7 @@ G01–G68 retain their frozen meanings. CT6 adds:
 - `tests/test_ct6_openapi.py` — schema snapshot and example validation;
 - `tests/test_ct6_determinism.py` — hashes, repeats and detail modes;
 - `tests/test_ct6_limits.py` — byte/count boundaries; and
-- `tests/test_ct6_golden_cases.py` — G69–G82 consolidated acceptance.
+- `tests/test_ct6_golden_cases.py` — G69–G83 consolidated acceptance.
 
 All existing CT1–CT5 tests remain mandatory. CT6 acceptance cannot weaken,
 skip, xfail or replace an upstream test.
@@ -509,7 +592,7 @@ skip, xfail or replace an upstream test.
 4. Implement hours-clause orchestration and CT5 entry.
 5. Implement success projections, summary/full detail and learning facts.
 6. Implement structured errors, health, capabilities and OpenAPI tests.
-7. Complete G69–G82, full regression and distribution verification.
+7. Complete G69–G83, full regression and distribution verification.
 
 Each checkpoint requires a clean commit and the entire regression suite before
 the next begins.
@@ -520,7 +603,7 @@ CT6 is complete only when:
 
 - independent review findings are resolved in a disposition document;
 - the API contains no actuarial formula duplication;
-- G69–G82 pass with permanent trace IDs;
+- G69–G83 pass with permanent trace IDs;
 - all CT1–CT5 tests continue to pass;
 - OpenAPI matches the frozen contract;
 - malformed, invalid and blocked requests never return partial success;
@@ -528,23 +611,25 @@ CT6 is complete only when:
 - a fresh environment passes dependency, import and complete test gates; and
 - the installation package is built and retested from the final clean commit.
 
-## 23. Questions for independent validation
+## 23. Frozen independent-review decisions
 
-1. Is accepting raw CT2 loss-basis/inuring inputs for catalogue mode the right
-   boundary, rather than accepting client-manufactured CT2/CT3 results?
-2. Is the frozen domain-shaped program source acceptable for the bounded
-   hours-clause route, given the prohibition on fabricated loss basis?
-3. Are separate catalogue and hours routes preferable to one discriminated
-   union route?
-4. Does `summary` omit the right presentation arrays while preserving enough
-   audit evidence and identical authoritative hashes?
-5. Should contract blockage remain HTTP 422, distinct by stable code, or use
-   HTTP 409?
-6. Are the proposed synchronous limits suitable for a learning lab, and should
-   exceeding the full-detail row limit be 413 rather than 422?
-7. Is returning cumulative credibility warnings under HTTP 200 correct?
-8. Does the error schema provide enough deterministic path/rule evidence
-   without leaking implementation detail?
-9. Are G69–G82 sufficient to freeze the API and orchestration contract?
-10. Is any response field capable of confusing pre-capacity entitlement with
-    post-capacity annual recovery or gross recovery with net cash settlement?
+1. Catalogue mode accepts raw CT2 loss-basis and inuring inputs; it rejects
+   client-manufactured CT2/CT3 calculated results.
+2. Hours mode accepts the frozen domain-shaped source only with explicit
+   CT2/CT3 identity validation and a regression against fabricated loss basis.
+3. Catalogue and hours-clause modes use separate routes.
+4. Summary mode retains identities, annual summaries, warnings,
+   reconciliations and election/exclusion evidence; G77 must exercise warnings
+   and elections as well as a clean catalogue case.
+5. Contract blockage remains HTTP 422 with `CT6_CONTRACT_BLOCKED`; HTTP 409 is
+   reserved for a supported-shape request naming an unsupported string API
+   schema version.
+6. The learning-lab ceiling is 10,000 trials and 100,000 occurrences. A
+   full-detail presentation above 25,000 rows returns 413; summary remains
+   eligible.
+7. Cumulative credibility warnings remain structured data under HTTP 200.
+8. Public error text comes only from a reviewed static catalogue. Paths, codes
+   and rule references provide auditability without internal exception text.
+9. G69–G83 are mandatory, including the newly explicit version-conflict seam.
+10. Exact authoritative response field names are frozen in Section 11.8 to
+    keep pre-/post-capacity, gross recovery, premium and cash distinct.
