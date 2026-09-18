@@ -1,6 +1,6 @@
 # CT7 Learning Lab Frontend, Interactive Experiments and Explanation Experience
 
-**Version:** Revised Draft v1.1 for independent validation
+**Version:** Revised Draft v1.2 for independent validation
 **Product:** EdInsured Catastrophe Treaty Learning Lab  
 **Authority:** CT0 master architecture and frozen CT1–CT6 contracts  
 **Implementation status:** Not authorized until this specification is independently reviewed, revised where necessary and frozen
@@ -9,7 +9,8 @@
 integrity gates, an explicit result-freshness model, frozen CT6 error mapping,
 a type-aware no-calculation gate, governed backend-test-count changes,
 non-numeric comparison rules, formula references and destination-specific
-input groups.
+input groups. v1.2 resolves F09 by adding a checked presentation-geometry
+boundary and positive/negative static-gate fixtures.
 
 ## 1. Purpose
 
@@ -154,6 +155,53 @@ permanent failing fixture containing
 `recovery = grossLoss - retention` in a component must prove the rule detects
 disguised formula duplication. This type-aware gate—not a keyword grep—is the
 objective G102 authority.
+
+### 7.2 Presentation-geometry boundary
+
+Proportional rendering is permitted only inside
+`src/visualization/geometry/`. This is a checked exemption for screen geometry,
+not an actuarial-calculation exemption.
+
+An approved geometry function may:
+
+- accept immutable `AuthoritativeNumber` magnitudes plus ordinary viewport,
+  track or canvas dimensions;
+- compare, divide, multiply, subtract or apply `Math.abs`, `Math.min` and
+  `Math.max` solely to create relative positions, extents and sizes;
+- call a vetted chart-library scale adapter whose output is a display
+  coordinate; and
+- return only branded `CssPixel`, `SvgCoordinate`, `VisualizationExtent` or
+  `UnitInterval` values inside a `VisualizationGeometry` object.
+
+An approved geometry function must not:
+
+- return `AuthoritativeNumber`, an unbranded number or a value assignable to an
+  API/request/learning/comparison model;
+- calculate recovery, retention, premium, utilization, probability, quantile,
+  delta, ratio for display as a business metric or any other actuarial result;
+- format, label, serialize, persist, log or place a geometry value in audit or
+  explanatory content;
+- decide attachment, exhaustion, admissibility, warning, ranking or
+  recommendation state; or
+- be imported by `api/`, `scenarios/`, request builders, learning-content
+  resolvers or comparison state.
+
+Components may use branded geometry outputs only for SVG attributes, canvas
+coordinates or CSS layout properties. Accessible text/table labels always use
+the unchanged authoritative source value through the normal formatter; a
+coordinate is never converted back to a business number. Tail charts should
+prefer vetted scale-library adapters, while bespoke tower and capacity
+diagrams use the same checked geometry directory.
+
+The type-aware lint configuration contains an explicit path-and-return-type
+rule for this boundary; no file-level disable comment or ad hoc exception is
+allowed. G102 includes:
+
+1. a passing fixture that scales `layerLimit / maxLimit * trackWidth` into a
+   branded `CssPixel` used only as an SVG width;
+2. the failing `recovery = grossLoss - retention` actuarial fixture; and
+3. a failing leakage fixture that attempts to display, serialize or assign a
+   geometry output as an authoritative/result value.
 
 ## 8. Technical architecture
 
@@ -521,7 +569,7 @@ test.
 | G99 | Sanitized server error | No stack/path/internal detail appears |
 | G100 | Accessibility | Keyboard path, focus, names, contrast and chart alternative pass |
 | G101 | Responsive layout | Core workflows operate at desktop, tablet and 320px width |
-| G102 | No calculation duplication | Type-aware branded-number gate passes production source and rejects the fixture `recovery = grossLoss - retention` |
+| G102 | Calculation/geometry boundary | Gate accepts vetted tower scaling to branded SVG/CSS geometry, rejects `recovery = grossLoss - retention`, and rejects geometry leakage into displayed/serialized business results |
 | G103 | Real API end to end | Production build completes catalogue and hours runs against CT6 |
 | G104 | Explanation traceability | Every result-specific Why/takeaway resolves all evidence paths; an invented uncited conclusion fixture fails |
 | G105 | Neutral learning | E01–E07 render no recommendation/ranking; a fixture naming a “recommended” election fails content lint |
