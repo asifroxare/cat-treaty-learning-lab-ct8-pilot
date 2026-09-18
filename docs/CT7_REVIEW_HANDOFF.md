@@ -1,6 +1,7 @@
 # CT7 Independent Review Handoff
 
-Please review `CT7_IMPLEMENTATION_SPEC.md` as a contract, not as a UI style
+Please review revised `CT7_IMPLEMENTATION_SPEC.md` v1.1 and
+`CT7_AUDIT_DISPOSITION.md` as contracts, not as a UI style
 proposal. Identify contradictions, missing states, calculation leakage,
 misleading educational behavior or untestable completion gates.
 
@@ -42,3 +43,7 @@ Then answer all questions in Section 27 and give one verdict:
 
 No frontend implementation should be reviewed or generated during this
 specification review.
+
+For the v1.1 confirmation round, explicitly state whether F01–F08 are closed
+and whether the specification may be frozen. Identify any new finding
+separately rather than silently reopening a closed item.

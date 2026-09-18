@@ -1,9 +1,15 @@
 # CT7 Learning Lab Frontend, Interactive Experiments and Explanation Experience
 
-**Version:** Draft v1.0 for independent validation  
+**Version:** Revised Draft v1.1 for independent validation
 **Product:** EdInsured Catastrophe Treaty Learning Lab  
 **Authority:** CT0 master architecture and frozen CT1–CT6 contracts  
 **Implementation status:** Not authorized until this specification is independently reviewed, revised where necessary and frozen
+
+**Revision note:** v1.1 resolves review findings F01–F08 by adding learning-
+integrity gates, an explicit result-freshness model, frozen CT6 error mapping,
+a type-aware no-calculation gate, governed backend-test-count changes,
+non-numeric comparison rules, formula references and destination-specific
+input groups.
 
 ## 1. Purpose
 
@@ -120,6 +126,35 @@ CT7 must not:
 Baseline and scenario comparison in CT7 v1 is therefore side-by-side. Any
 future delta metric requires a reviewed backend contract.
 
+### 7.1 Enforceable no-calculation gate
+
+The CT6 client maps every numeric response field to the branded TypeScript type
+`AuthoritativeNumber`. The generated/raw transport type is not exported outside
+`src/api/`. A mandatory type-aware ESLint rule scans all `frontend/src/**/*.ts`
+and `frontend/src/**/*.tsx` files and rejects:
+
+- arithmetic binary expressions (`+`, `-`, `*`, `/`, `%`, `**`) when either
+  operand is, contains or is derived from `AuthoritativeNumber`;
+- unary numeric mutation (`+value`, `-value`, `++`, `--`) on such values;
+- `Math.*`, `Number` coercion, `parseInt`, `parseFloat`, `reduce` or numeric
+  aggregation helpers applied to such values; and
+- assignment of a calculated ordinary number back into an authoritative
+  response model.
+
+Comparisons used solely to select presentation state (for example, showing the
+negative-cash explanation when `net_cash_settlement < 0`) are permitted and do
+not produce a new number. `src/formatting/` may pass an authoritative number
+unchanged to `Intl.NumberFormat`; it receives no general arithmetic exemption.
+Percentage formatting uses `Intl.NumberFormat`'s percent style rather than
+multiplying by 100.
+
+The static gate also enforces import boundaries: feature/component/scenario
+modules cannot import raw CT6 transport types or unbranded response JSON. A
+permanent failing fixture containing
+`recovery = grossLoss - retention` in a component must prove the rule detects
+disguised formula duplication. This type-aware gate—not a keyword grep—is the
+objective G102 authority.
+
 ## 8. Technical architecture
 
 - React with Vite and TypeScript;
@@ -164,7 +199,8 @@ CT7 v1 has six primary destinations:
 
 ## 10. Run-state machine
 
-Each run panel has exactly one state:
+Each run panel has exactly one execution state and one orthogonal result-
+freshness value.
 
 | State | Required behavior |
 |---|---|
@@ -178,22 +214,47 @@ Each run panel has exactly one state:
 | `server_error` | Sanitized recovery path; no stale response represented as new |
 | `offline` | Clear connectivity state and retry; no simulated fallback result |
 
-Changing any contractual input marks the prior result `stale` until a new
-successful run completes. A stale result may remain visible for comparison but
-must be labelled and visually distinct.
+`resultFreshness` is exactly one of `none`, `current` or `stale`; it is not a
+tenth execution state. A successful response sets `state=success` and
+`resultFreshness=current`. Changing any contractual input sets
+`state=editing` and changes an existing result to `resultFreshness=stale` until
+a new successful run completes. Submission and error states may coexist with a
+stale prior result, but that result remains labelled **Previous result — inputs
+changed** and cannot be presented as the failed/submitting run's result. If no
+prior success exists, all non-success states use `resultFreshness=none`.
+
+### 10.1 Frozen CT6 transport mapping
+
+| CT6 condition | HTTP | Frontend state | Required presentation |
+|---|---:|---|---|
+| `CT6_MALFORMED_JSON` | 400 | `schema_error` | Request could not be serialized; no result |
+| `CT6_VERSION_CONFLICT` | 409 | `schema_error` | Incompatible contract banner; no field-level correction invented |
+| `CT6_REQUEST_TOO_LARGE` | 413 | `too_large` | Offer an explicit user-selected summary rerun |
+| `CT6_SCHEMA_VALIDATION` | 422 | `schema_error` | Map returned paths to fields where possible |
+| `CT6_DOMAIN_VALIDATION` | 422 | `domain_error` | Show rule/reference evidence without prescribing terms |
+| `CT6_CONTRACT_BLOCKED` | 422 | `contract_blocked` | Show blockage/election evidence and no partial recovery |
+| `CT6_INTERNAL_ERROR` | 500 | `server_error` | Sanitized retry path; no internal detail |
+| `CT6_NOT_READY` | 503 | `server_error` | Service-not-ready message distinct from connectivity loss |
+| Network failure, timeout or unreachable API | none | `offline` | Connectivity guidance; no fabricated CT6 problem body |
+| Unrecognized status/body | any | `server_error` | Fail closed; no partial or inferred result |
+
+The response `code`, not free-text `detail`, controls this mapping. Contract
+tests submit every documented code and assert exactly the state above.
 
 ## 11. Input experience
 
 Inputs are grouped by meaning rather than DTO nesting:
 
-- simulation and provenance;
-- occurrence loss basis and included/excluded components;
-- inuring covers and order;
-- Cat XL layers and coordination controls;
-- annual capacity and reinstatement terms;
-- settlement mode;
-- tail configuration; and
-- hours-clause terms and loss components.
+| Group | Destination |
+|---|---|
+| simulation and provenance | Explore Treaty |
+| occurrence loss basis and included/excluded components | Explore Treaty |
+| inuring covers and order | Explore Treaty |
+| Cat XL layers and coordination controls | Explore Treaty and Hours-Clause Lab program source |
+| annual capacity and reinstatement terms | Explore Treaty and Hours-Clause Lab program source |
+| settlement mode | Explore Treaty and Hours-Clause Lab program source |
+| tail configuration | Explore Treaty; Hours-Clause Lab uses its bounded one-trial contract |
+| hours-clause terms and timestamped loss components | Hours-Clause Lab only |
 
 Every field provides:
 
@@ -273,8 +334,8 @@ CT7 v1 includes at least these seven experiments:
 
 | ID | Experiment | Controlled change | Required learning evidence |
 |---|---|---|---|
-| E01 | From insured loss to subject loss | Include/exclude one disclosed component or alter one inuring cover | F03–F09 reconciliation and changed subject loss |
-| E02 | Move attachment and limit | Change one layer while holding the occurrence fixed | Tower geometry, layer recovery and retained buckets |
+| E01 | From insured loss to subject loss | Include/exclude one disclosed component or alter one inuring cover | CT2 F03–F09 reconciliation (`docs/CT2_IMPLEMENTATION_SPEC.md`, §§6–8) and changed subject loss |
+| E02 | Move attachment and limit | Change one layer while holding the occurrence fixed | CT3 F10–F16 geometry/recovery (`docs/CT3_IMPLEMENTATION_SPEC.md`, §§6–11), layer recovery and retained buckets |
 | E03 | Shares are different controls | Change ceded share and placement share separately | Recovery/capacity effect and fixed-share caveat |
 | E04 | Annual capacity across events | Add/change a later event | Pre-/post-capacity difference, exhaustion and shortfall |
 | E05 | Reinstatement economics | Switch free/paid or time basis | Capacity unchanged by presentation; premium and cash effect disclosed |
@@ -315,6 +376,22 @@ election evidence. Explanations follow a four-part structure:
 Static educational text must be reviewed content. It may explain a concept but
 must not assert a numerical conclusion that was not returned by CT6.
 
+Every result-specific **Why** or takeaway record uses a typed content schema
+with one or more `evidencePaths`. Each path must resolve to an existing CT6
+response field, warning, reconciliation, exclusion, election or trace
+reference before the statement renders. Missing/unresolved evidence fails
+closed as a content defect; it is not silently omitted or replaced with an
+invented explanation. General concept definitions are separately typed as
+`concept` content and cannot appear in a result-specific Why slot.
+
+Guided experiment result/takeaway content is neutral. It must not rank or
+recommend an election, layer or treaty structure. A content-lint gate rejects
+outcome statements containing reviewed recommendation/ranking forms including
+`recommended`, `should choose`, `best option`, `optimal structure`,
+`prefer this election` and grammatical variants. The UI contains no
+recommendation badge or ranking component. Tests include fixtures with an
+invented uncited conclusion and a “recommended” election; both must fail.
+
 ## 17. Comparison contract
 
 - Baseline and scenario are separate complete requests and responses.
@@ -323,6 +400,9 @@ must not assert a numerical conclusion that was not returned by CT6.
 - Side-by-side values use identical units, precision and perspective.
 - The UI may identify fields the user changed.
 - The UI may not calculate or display result deltas in CT7 v1.
+- The UI must not display a result-row “changed”, “higher/lower”, improvement,
+  ranking or difference badge. Output comparison is visual side-by-side only;
+  even non-numeric output-difference indicators are forbidden in CT7 v1.
 - Comparison is disabled across different reporting currencies or incompatible
   CT6 schema versions.
 
@@ -401,13 +481,16 @@ Required test groups:
 
 - API/OpenAPI compatibility and strict field-name tests;
 - request-builder serialization tests;
-- no-actuarial-calculation static source gate;
+- type-aware branded-number no-actuarial-calculation static source gate,
+  including a mandatory failing-formula fixture;
 - run-state and stale-result tests;
 - catalogue and hours end-to-end mocked transport tests;
 - three-way settlement and negative-cash presentation tests;
 - null/status utilization tests;
 - warning, exclusion, reconciliation and audit-evidence tests;
 - guided experiment tests;
+- explanation evidence-resolution and neutral-content lint tests, including
+  mandatory invented/recommendation failing fixtures;
 - responsive component tests;
 - automated accessibility tests;
 - production build and bundle checks; and
@@ -420,26 +503,28 @@ test.
 
 | ID | Scenario | Expected check |
 |---|---|---|
-| G84 | Product separation | Treaty lab identity/disclaimer cannot be confused with pricing lab |
+| G84 | Product separation | Treaty lab identity/disclaimer remains distinct; cross-navigation transfers no form, run or identity state between products |
 | G85 | Catalogue happy path | Complete CT6 result renders every result tier |
 | G86 | Hours happy path | Candidate, exclusion and election evidence render completely |
 | G87 | Strict schema error | Path evidence maps to the relevant input and no result renders |
 | G88 | Contract blocked | Blocking evidence renders without partial recovery |
-| G89 | Stale result | Input edit marks prior result stale until rerun |
+| G89 | Stale result | Input edit produces `state=editing` plus `resultFreshness=stale`; submitting/errors may retain only the labelled stale prior result |
 | G90 | Three-way settlement | Recovery, premium and cash remain separate |
 | G91 | Negative cash | Negative value remains visible and unfloored |
 | G92 | Zero capacity | Null plus status displays N/A, not zero |
 | G93 | Full versus summary | Both modes preserve identity/audit evidence; omitted rows are clear |
 | G94 | Cumulative warnings | Every CT6 credibility warning remains visible |
 | G95 | Tail series integrity | Returned points chart without interpolation/rebucketing |
-| G96 | Comparison | Two complete runs remain independent; no client result delta |
+| G96 | Comparison | Two complete runs remain independent; no client result delta or non-numeric output-difference badge |
 | G97 | Request identity | Request ID and CT4/CT5 hashes visible in audit trail |
 | G98 | API unavailable | Offline state contains no fabricated result |
 | G99 | Sanitized server error | No stack/path/internal detail appears |
 | G100 | Accessibility | Keyboard path, focus, names, contrast and chart alternative pass |
 | G101 | Responsive layout | Core workflows operate at desktop, tablet and 320px width |
-| G102 | No calculation duplication | Static gate finds no frozen actuarial formulas in frontend |
+| G102 | No calculation duplication | Type-aware branded-number gate passes production source and rejects the fixture `recovery = grossLoss - retention` |
 | G103 | Real API end to end | Production build completes catalogue and hours runs against CT6 |
+| G104 | Explanation traceability | Every result-specific Why/takeaway resolves all evidence paths; an invented uncited conclusion fixture fails |
+| G105 | Neutral learning | E01–E07 render no recommendation/ranking; a fixture naming a “recommended” election fails content lint |
 
 ## 25. Implementation checkpoints
 
@@ -450,7 +535,7 @@ test.
 5. hours-clause workflow and election evidence;
 6. Guided Lab experiments and side-by-side comparison;
 7. accessibility, responsive behavior, errors and security hardening;
-8. G84–G103, real-API end-to-end acceptance and production build; and
+8. G84–G105, real-API end-to-end acceptance and production build; and
 9. final CT7 installation package and independent reproduction.
 
 Every implementation checkpoint requires frontend tests, the complete CT1–CT6
@@ -461,15 +546,19 @@ backend suite and a clean commit.
 CT7 closes only when:
 
 - independent review findings are resolved in a disposition document;
-- G84–G103 pass with permanent trace IDs;
+- G84–G105 pass with permanent trace IDs;
 - no actuarial formula exists in frontend source;
 - both run modes pass real-API browser tests;
 - OpenAPI compatibility and exact authoritative names pass;
 - negative cash, null utilization and all warnings/exclusions reconcile;
 - accessibility and responsive manual checks are documented;
 - dependency audit and production build pass;
-- all 1003 CT1–CT6 tests continue to pass or an explicitly reviewed successor
-  count is documented; and
+- all 1003 CT1–CT6 tests continue to pass. A successor count is accepted only
+  through `docs/CT6_TEST_COUNT_ADDENDUM.md`, recording old/new collected test
+  inventories, reasons for every addition/removal, the governing commits and
+  explicit acceptance by the independent CT7 reviewer and project owner. A
+  developer-generated count change without that artifact blocks CT7 closure;
+  and
 - a clean installation package is reproduced independently.
 
 ## 27. Questions for independent reviewer
@@ -489,7 +578,7 @@ CT7 closes only when:
 11. Are the accessibility requirements testable and proportionate?
 12. Are security and local-persistence boundaries appropriate before public
     deployment?
-13. Are G84–G103 sufficient for frontend closure?
+13. Are G84–G105 sufficient for frontend closure?
 14. Should any CT7 item be deferred to deployment readiness rather than the
     frontend milestone?
 15. What finding, if any, blocks freezing this specification?
