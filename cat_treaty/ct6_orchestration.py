@@ -21,7 +21,7 @@ from cat_treaty.ct5_analytics_models import CT5Analytics
 from cat_treaty.ct5_metadata import CT5RunIdentity, build_ct5_run_identity
 from cat_treaty.ct5_models import CT5CatalogueResult
 from cat_treaty.ct5_simulation import apply_ct5_catalogue
-from cat_treaty.ct6_adapters import AdaptedCatalogueRequest, AdaptedSourceOccurrence, adapt_catalogue_request
+from cat_treaty.ct6_adapters import AdaptedCatalogueRequest, AdaptedHoursRequest, AdaptedSourceOccurrence, adapt_catalogue_request
 from cat_treaty.ct6_models import CatalogueRunRequest
 from cat_treaty.frequency import calculate_frequency_analytics
 from cat_treaty.inuring import apply_inuring_waterfall
@@ -122,6 +122,30 @@ def _build_occurrence(
     adapted: AdaptedCatalogueRequest,
     source_version: str,
 ) -> CT4OccurrenceInput:
+    program_input = _build_program_input(
+        occurrence,
+        adapted=adapted,
+        source_version=source_version,
+    )
+    return CT4OccurrenceInput(
+        annual_trial_id=occurrence.annual_trial_id,
+        event_id=occurrence.event_id,
+        event_time=occurrence.event_time,
+        event_sequence=occurrence.event_sequence,
+        peril=occurrence.peril,
+        region=occurrence.region,
+        program_input=program_input,
+        source_reference=occurrence.source_reference,
+        trace_reference=occurrence.trace_reference,
+    )
+
+
+def _build_program_input(
+    occurrence: AdaptedSourceOccurrence,
+    *,
+    adapted: AdaptedCatalogueRequest | AdaptedHoursRequest,
+    source_version: str,
+) -> CT3ProgramInput:
     loss_basis = build_loss_basis(occurrence.loss_basis)
     waterfall_input = InuringWaterfallInput(
         loss_basis=loss_basis,
@@ -145,14 +169,4 @@ def _build_occurrence(
         source_reference=program.source_reference,
         rule_reference=program.rule_reference,
     )
-    return CT4OccurrenceInput(
-        annual_trial_id=occurrence.annual_trial_id,
-        event_id=occurrence.event_id,
-        event_time=occurrence.event_time,
-        event_sequence=occurrence.event_sequence,
-        peril=occurrence.peril,
-        region=occurrence.region,
-        program_input=program_input,
-        source_reference=occurrence.source_reference,
-        trace_reference=occurrence.trace_reference,
-    )
+    return program_input

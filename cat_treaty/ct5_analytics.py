@@ -27,7 +27,11 @@ def calculate_ct5_analytics(result: CT5CatalogueResult) -> CT5Analytics:
 
     if not isinstance(result, CT5CatalogueResult):
         raise ValueError("result must be a completed CT5CatalogueResult")
-    config = result.ct4_result.simulation_input.tail_configuration
+    config = (
+        result.ct4_result.simulation_input.tail_configuration
+        if hasattr(result.ct4_result, "simulation_input")
+        else result.ct4_simulation_input.tail_configuration  # type: ignore[union-attr]
+    )
     perspectives = tuple(
         _perspective(result.annual_rows, perspective, config)
         for perspective in CT5MetricPerspective

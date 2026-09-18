@@ -65,8 +65,15 @@ def validate_ct4_identity(
         raise ValueError("ct4_identity must be CT4RunIdentity")
     if ct4_identity.engine_version != CT4_ENGINE_VERSION or ct4_identity.schema_version != CT4_SCHEMA_VERSION:
         raise ValueError("CT4 engine/schema identity is not supported by CT5 v1")
+    simulation_input = (
+        ct5_result.ct4_result.simulation_input
+        if hasattr(ct5_result.ct4_result, "simulation_input")
+        else ct5_result.ct4_simulation_input
+    )
+    if simulation_input is None:
+        raise ValueError("CT5 result has no CT4 simulation input")
     expected = build_ct4_run_identity(
-        simulation_input=ct5_result.ct4_result.simulation_input,
+        simulation_input=simulation_input,
         result=ct5_result.ct4_result,
         analytics=ct4_analytics,
     )

@@ -10,7 +10,7 @@ import math
 from numbers import Real
 
 from cat_treaty.models import CapacityBasis, SettlementMode
-from cat_treaty.ct4_models import CT4CatalogueResult, CT4OccurrenceLedgerRow, HoursClauseResult
+from cat_treaty.ct4_models import CT4CatalogueResult, CT4OccurrenceLedgerRow, CT4SimulationInput, HoursClauseResult, HoursElectionStatus, OccurrenceDefinitionMode
 
 
 RELATIVE_TOLERANCE = 1e-12
@@ -783,22 +783,40 @@ class CT5AnnualLedgerRow:
 
 @dataclass(frozen=True, slots=True)
 class CT5CatalogueResult:
-    ct4_result: CT4CatalogueResult
+    ct4_result: CT4CatalogueResult | HoursClauseResult
     treaty_terms: CT5TreatyTerms
     occurrence_rows: tuple[CT5EventLedgerRow, ...]
     annual_rows: tuple[CT5AnnualLedgerRow, ...]
     completed: bool
+    ct4_simulation_input: CT4SimulationInput | None = None
 
     def __post_init__(self) -> None:
-        if not isinstance(self.ct4_result, CT4CatalogueResult):
-            raise ValueError("ct4_result must be a completed CT4CatalogueResult")
+        if not isinstance(self.ct4_result, (CT4CatalogueResult, HoursClauseResult)):
+            raise ValueError("ct4_result must be a completed CT4 result")
         if not isinstance(self.treaty_terms, CT5TreatyTerms):
             raise ValueError("treaty_terms must be CT5TreatyTerms")
         _tuple_of("occurrence_rows", self.occurrence_rows, CT5EventLedgerRow)
         _tuple_of("annual_rows", self.annual_rows, CT5AnnualLedgerRow)
         if not isinstance(self.completed, bool) or not self.completed:
             raise ValueError("CT5 catalogue result must be complete")
-        expected_ids = tuple(range(1, self.ct4_result.simulation_input.trial_count + 1))
+        if isinstance(self.ct4_result, CT4CatalogueResult):
+            if self.ct4_simulation_input is not None and self.ct4_simulation_input != self.ct4_result.simulation_input:
+                raise ValueError("catalogue ct4_simulation_input must match CT4 result")
+            expected_ids = tuple(range(1, self.ct4_result.simulation_input.trial_count + 1))
+            ct4_rows = self.ct4_result.occurrence_rows
+        else:
+            if self.ct4_result.election_status is not HoursElectionStatus.SELECTED:
+                raise ValueError("CT5 requires a selected hours-clause result")
+            if not isinstance(self.ct4_simulation_input, CT4SimulationInput):
+                raise ValueError("hours CT5 result requires ct4_simulation_input")
+            if (
+                self.ct4_simulation_input.occurrence_definition_mode
+                is not OccurrenceDefinitionMode.HOURS_CLAUSE_TEACHING
+                or self.ct4_simulation_input.hours_clause_scenario != self.ct4_result.scenario
+            ):
+                raise ValueError("hours ct4_simulation_input must match CT4 result")
+            expected_ids = (1,)
+            ct4_rows = self.ct4_result.selected_occurrence_rows
         if tuple(item.annual_trial_id for item in self.annual_rows) != expected_ids:
             raise ValueError("annual rows must preserve every CT4 trial")
         flattened = tuple(
@@ -806,7 +824,7 @@ class CT5CatalogueResult:
         )
         if self.occurrence_rows != flattened:
             raise ValueError("occurrence_rows must equal flattened annual ledgers")
-        ct4_ids = tuple(item.event_id for item in self.ct4_result.occurrence_rows)
+        ct4_ids = tuple(item.event_id for item in ct4_rows)
         if tuple(item.event_id for item in self.occurrence_rows) != ct4_ids:
             raise ValueError("CT5 occurrence order must match completed CT4 order")
 

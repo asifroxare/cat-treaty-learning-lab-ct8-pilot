@@ -12,6 +12,50 @@ from cat_treaty.ct6_models import HoursComponentDTO, HoursInputDTO, HoursRunRequ
 from tests.test_ct6_models import valid_request
 
 
+def valid_hours_request(
+    *,
+    components: tuple[HoursComponentDTO, ...] | None = None,
+    selected_method: HoursElectionMethod = HoursElectionMethod.MAXIMUM_SUBJECT_LOSS,
+    manual_candidate_set_id: str | None = None,
+) -> HoursRunRequest:
+    catalogue = valid_request()
+    source = catalogue.input.trials[0].occurrences[0]
+    selected_components = components or (
+        HoursComponentDTO(
+            component_id="C1", subject_loss=20_000_000.0, timestamp=10.0,
+            peril="wind", region="R1", causal_event_id="storm",
+            source_reference="source",
+        ),
+        HoursComponentDTO(
+            component_id="C2", subject_loss=20_000_000.0, timestamp=100.0,
+            peril="wind", region="R1", causal_event_id="storm",
+            source_reference="source",
+        ),
+    )
+    return HoursRunRequest(
+        api_schema_version="ct6.0",
+        input=HoursInputDTO(
+            scenario_id="H1", source_version="v1", components=selected_components,
+            terms=HoursTermsDTO(
+                treaty_term_start=0.0, treaty_term_end=365.0, hours_duration=72.0,
+                permitted_perils=("wind",), permitted_regions=("R1",),
+                causal_link_required=True,
+                authorized_election_methods=(
+                    HoursElectionMethod.EARLIEST_VALID_WINDOW,
+                    HoursElectionMethod.MAXIMUM_SUBJECT_LOSS,
+                    HoursElectionMethod.MAXIMUM_CONTRACTUAL_RECOVERY,
+                    HoursElectionMethod.MANUAL,
+                ),
+                selected_election_method=selected_method,
+                manual_candidate_set_id=manual_candidate_set_id,
+                rule_reference="CT4-hours",
+            ),
+            program_source=source, program=catalogue.input.program,
+            treaty_terms=catalogue.input.treaty_terms, source_reference="source",
+        ),
+    )
+
+
 def test_catalogue_adapter_preserves_authoritative_inputs_exactly() -> None:
     request = valid_request()
     adapted = adapt_catalogue_request(request)
@@ -54,28 +98,11 @@ def test_adapter_imports_no_calculation_or_identity_engines() -> None:
 
 def test_hours_adapter_requires_and_preserves_disclosed_program_source() -> None:
     catalogue = valid_request()
-    source = catalogue.input.trials[0].occurrences[0]
-    request = HoursRunRequest(
-        api_schema_version="ct6.0",
-        input=HoursInputDTO(
-            scenario_id="H1", source_version="v1",
-            components=(HoursComponentDTO(
-                component_id="C1", subject_loss=20_000_000.0, timestamp=10.0,
-                peril="wind", region="R1", causal_event_id="storm",
-                source_reference="source",
-            ),),
-            terms=HoursTermsDTO(
-                treaty_term_start=0.0, treaty_term_end=365.0, hours_duration=72.0,
-                permitted_perils=("wind",), permitted_regions=("R1",),
-                causal_link_required=True,
-                authorized_election_methods=(HoursElectionMethod.MAXIMUM_SUBJECT_LOSS,),
-                selected_election_method=HoursElectionMethod.MAXIMUM_SUBJECT_LOSS,
-                manual_candidate_set_id=None, rule_reference="CT4-hours",
-            ),
-            program_source=source, program=catalogue.input.program,
-            treaty_terms=catalogue.input.treaty_terms, source_reference="source",
-        ),
-    )
+    request = valid_hours_request(components=(HoursComponentDTO(
+        component_id="C1", subject_loss=20_000_000.0, timestamp=10.0,
+        peril="wind", region="R1", causal_event_id="storm",
+        source_reference="source",
+    ),))
     adapted = adapt_hours_request(request)
     assert adapted.program_source.loss_basis == adapt_catalogue_request(catalogue).trials[0].occurrences[0].loss_basis
     assert adapted.components[0].subject_loss == 20_000_000.0

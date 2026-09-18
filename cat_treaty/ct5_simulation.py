@@ -3,7 +3,7 @@
 import math
 
 from cat_treaty.annual_capacity import apply_annual_capacity, initialize_annual_capacity
-from cat_treaty.ct4_models import CT4CatalogueResult, HoursClauseResult, HoursElectionStatus
+from cat_treaty.ct4_models import CT4CatalogueResult, CT4SimulationInput, HoursClauseResult, HoursElectionStatus
 from cat_treaty.ct3_models import CatLayerInput
 from cat_treaty.ct5_models import (
     CT5AnnualLedgerRow,
@@ -21,30 +21,54 @@ from cat_treaty.reinstatement import calculate_reinstatement_premium
 
 def apply_ct5_catalogue(
     *,
-    ct4_result: CT4CatalogueResult,
+    ct4_result: CT4CatalogueResult | HoursClauseResult,
     treaty_terms: CT5TreatyTerms,
     program_layers: tuple[CatLayerInput, ...] | None = None,
+    ct4_simulation_input: CT4SimulationInput | None = None,
 ) -> CT5CatalogueResult:
-    """Apply CT5 statefully to every frozen CT4 catalogue occurrence."""
+    """Apply CT5 statefully to completed catalogue or elected-hours rows."""
 
-    if not isinstance(ct4_result, CT4CatalogueResult):
-        raise ValueError("ct4_result must be a completed CT4CatalogueResult")
+    if not isinstance(ct4_result, (CT4CatalogueResult, HoursClauseResult)):
+        raise ValueError("ct4_result must be a completed CT4 result")
     if not isinstance(treaty_terms, CT5TreatyTerms):
         raise ValueError("treaty_terms must be CT5TreatyTerms")
-    event_inputs = {
-        event.event_id: event
-        for trial in ct4_result.simulation_input.trials
-        for event in trial.occurrences
-    }
-    if set(event_inputs) != {item.event_id for item in ct4_result.occurrence_rows}:
-        raise ValueError("CT4 input events and completed occurrence rows do not match")
+    if isinstance(ct4_result, CT4CatalogueResult):
+        event_inputs = {
+            event.event_id: event
+            for trial in ct4_result.simulation_input.trials
+            for event in trial.occurrences
+        }
+        if set(event_inputs) != {item.event_id for item in ct4_result.occurrence_rows}:
+            raise ValueError("CT4 input events and completed occurrence rows do not match")
+        event_times = {key: value.event_time for key, value in event_inputs.items()}
+        source_annual_rows = ct4_result.annual_rows
+        result_simulation_input = ct4_result.simulation_input
+    else:
+        entry = prepare_ct5_hours_clause_entry(ct4_result)
+        if not isinstance(ct4_simulation_input, CT4SimulationInput):
+            raise ValueError("hours CT5 processing requires ct4_simulation_input")
+        event_inputs = {}
+        event_times = {
+            row.event_id: event_time
+            for row, event_time in zip(entry.occurrence_rows, entry.event_times, strict=True)
+        }
+        assert ct4_result.annual_row is not None
+        source_annual_rows = (ct4_result.annual_row,)
+        result_simulation_input = ct4_simulation_input
     if program_layers is not None and (
         not isinstance(program_layers, tuple)
         or not 1 <= len(program_layers) <= 4
         or not all(isinstance(item, CatLayerInput) for item in program_layers)
     ):
         raise ValueError("program_layers must contain one to four CatLayerInput values")
-    if event_inputs:
+    if isinstance(ct4_result, HoursClauseResult):
+        reference_layers = {
+            item.layer_id: item for item in ct4_result.scenario.program_terms_source.layers
+        }
+        if program_layers is not None and tuple(reference_layers.values()) != program_layers:
+            raise ValueError("program_layers must match the frozen CT4 hours program")
+        program_id = ct4_result.scenario.program_terms_source.program_id
+    elif event_inputs:
         first_event = next(iter(event_inputs.values()))
         reference_layers = {
             item.layer_id: item for item in first_event.program_input.layers
@@ -68,7 +92,7 @@ def apply_ct5_catalogue(
 
     annual_rows: list[CT5AnnualLedgerRow] = []
     occurrence_rows: list[CT5EventLedgerRow] = []
-    for ct4_annual in ct4_result.annual_rows:
+    for ct4_annual in source_annual_rows:
         states = {
             layer_id: initialize_annual_capacity(
                 layer,
@@ -79,7 +103,6 @@ def apply_ct5_catalogue(
         }
         event_rows: list[CT5EventLedgerRow] = []
         for ct4_row in ct4_annual.occurrence_rows:
-            event_input = event_inputs[ct4_row.event_id]
             result = ct4_row.assessment.program_result
             if result is None:
                 raise ValueError("CT5 requires a completed CT3 program result")
@@ -102,7 +125,7 @@ def apply_ct5_catalogue(
                 premium = calculate_reinstatement_premium(
                     transition=transition,
                     terms=term_by_layer[layer_id],
-                    event_time=event_input.event_time,
+                    event_time=event_times[ct4_row.event_id],
                 )
                 layer_rows.append(
                     CT5LayerEventLedgerRow(
@@ -200,6 +223,11 @@ def apply_ct5_catalogue(
         occurrence_rows=tuple(occurrence_rows),
         annual_rows=tuple(annual_rows),
         completed=True,
+        ct4_simulation_input=(
+            result_simulation_input
+            if isinstance(ct4_result, HoursClauseResult)
+            else None
+        ),
     )
 
 
