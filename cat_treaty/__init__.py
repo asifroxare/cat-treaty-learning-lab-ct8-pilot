@@ -185,7 +185,13 @@ from cat_treaty.ct5_metadata import (
     serialize_ct5_result,
     validate_ct4_identity,
 )
-from cat_treaty.golden_cases import CT5_GOLDEN_CASE_EVIDENCE, CT5GoldenCaseEvidence
+from cat_treaty.golden_cases import (
+    CT5_GOLDEN_CASE_EVIDENCE,
+    CT5GoldenCaseEvidence,
+    CT6_GOLDEN_CASE_EVIDENCE,
+    CT6GoldenCaseEvidence,
+)
+from cat_treaty.runtime import RuntimeSettings
 from cat_treaty.frequency import (
     calculate_frequency_analytics,
     calculate_frequency_analytics_from_rows,
@@ -311,6 +317,9 @@ __all__ = [
     "CT5HoursClauseEntry",
     "CT5GoldenCaseEvidence",
     "CT5_GOLDEN_CASE_EVIDENCE",
+    "CT6_GOLDEN_CASE_EVIDENCE",
+    "CT6GoldenCaseEvidence",
+    "RuntimeSettings",
     "CT5ExceedancePoint",
     "CT5LayerAnnualSummary",
     "CT5LayerExhaustionMetric",

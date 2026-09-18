@@ -515,6 +515,21 @@ class PostCapacityOccurrenceResponse(StrictWireModel):
     layer_event_rows: tuple[PostCapacityLayerEventResponse, ...]
 
 
+class PostCapacityLayerAnnualResponse(StrictWireModel):
+    annual_trial_id: PositiveInt
+    layer_id: StrictStr
+    initial_capacity: NonNegativeFloat
+    initial_reinstatement_reserve: NonNegativeFloat
+    total_recovery: NonNegativeFloat
+    total_reinstated: NonNegativeFloat
+    final_active_capacity: NonNegativeFloat
+    final_reinstatement_reserve: NonNegativeFloat
+    realized_capacity_utilization: Fraction | None
+    realized_capacity_utilization_status: StrictStr
+    reinstatement_reserve_utilization: Fraction | None
+    reinstatement_reserve_utilization_status: StrictStr
+
+
 class PostCapacityAnnualResponse(StrictWireModel):
     annual_trial_id: PositiveInt
     subject_loss: NonNegativeFloat
@@ -525,6 +540,7 @@ class PostCapacityAnnualResponse(StrictWireModel):
     net_cash_settlement: StrictFloat
     maximum_occurrence_recovery: NonNegativeFloat
     reconciliation_passed: StrictBool
+    layer_summaries: tuple[PostCapacityLayerAnnualResponse, ...]
 
 
 class CT6ErrorItem(StrictWireModel):

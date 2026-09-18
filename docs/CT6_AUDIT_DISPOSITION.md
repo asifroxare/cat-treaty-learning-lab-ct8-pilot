@@ -16,6 +16,7 @@
 | CT6-H | Version-conflict behavior lacked a golden case | Added G83 for 409 versus 422 version behavior. |
 | CT6-I | Authoritative response field names were not pinned | Added the exact pre-capacity, post-capacity, settlement, shortfall and layer-capacity names in Section 11.8. |
 | CT6-J | Ten reviewer questions remained open | Replaced them with frozen decisions in Section 23. |
+| CT6-K | Public CT6 projection initially omitted CT5 annual layer utilization/status fields promised by Section 11.5 | Added typed `layer_summaries` to each post-capacity annual row, including realized and reinstatement-reserve utilization values and statuses. G79 verifies the zero-capacity `null` plus `not_applicable_zero_capacity` contract end to end. |
 
 The reviewer accepted raw CT2 catalogue inputs, separate catalogue/hours
 routes, HTTP 422 for contractual blockage, cumulative warnings under HTTP 200,

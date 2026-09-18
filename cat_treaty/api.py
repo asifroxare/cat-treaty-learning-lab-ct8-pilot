@@ -14,6 +14,7 @@ from uuid import uuid4
 from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, ValidationError
 
 from cat_treaty.ct2_metadata import CT2_ENGINE_VERSION, CT2_SCHEMA_VERSION
@@ -31,6 +32,7 @@ from cat_treaty.ct6_orchestration import run_catalogue
 from cat_treaty.ct6_responses import project_catalogue_success, project_hours_success
 from cat_treaty.models import CapacityBasis, SettlementMode
 from cat_treaty.simulation import CT4PreflightError
+from cat_treaty.runtime import RuntimeSettings
 
 MAX_REQUEST_BYTES = 25 * 1024 * 1024
 MAX_CATALOGUE_TRIALS = 10_000
@@ -52,12 +54,21 @@ _MESSAGES = {
 }
 
 
-def create_app() -> FastAPI:
+def create_app(*, settings: RuntimeSettings | None = None) -> FastAPI:
+    runtime = settings or RuntimeSettings.from_environment()
     application = FastAPI(
         title="EdInsured Catastrophe Treaty Learning Lab API",
         version=CT6_API_VERSION,
         description="Strict CT6 transport over the frozen CT2--CT5 engines.",
     )
+    if runtime.cors_origins:
+        application.add_middleware(
+            CORSMiddleware,
+            allow_origins=list(runtime.cors_origins),
+            allow_credentials=runtime.cors_allow_credentials,
+            allow_methods=["GET", "POST", "OPTIONS"],
+            allow_headers=["Content-Type", "X-Request-ID"],
+        )
 
     @application.middleware("http")
     async def request_contract(request: Request, call_next: Callable):

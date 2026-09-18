@@ -24,6 +24,7 @@ from cat_treaty.ct6_models import (
     CT6VersionsResponse,
     CT6WarningResponse,
     PostCapacityAnnualResponse,
+    PostCapacityLayerAnnualResponse,
     PostCapacityLayerEventResponse,
     PostCapacityOccurrenceResponse,
     PreCapacityAnnualResponse,
@@ -205,6 +206,23 @@ def _post_annual(row) -> PostCapacityAnnualResponse:
         net_cash_settlement=row.net_cash_settlement,
         maximum_occurrence_recovery=row.maximum_occurrence_recovery,
         reconciliation_passed=row.reconciliation_passed,
+        layer_summaries=tuple(
+            PostCapacityLayerAnnualResponse(
+                annual_trial_id=item.annual_trial_id,
+                layer_id=item.layer_id,
+                initial_capacity=item.initial_capacity,
+                initial_reinstatement_reserve=item.initial_reinstatement_reserve,
+                total_recovery=item.total_recovery,
+                total_reinstated=item.total_reinstated,
+                final_active_capacity=item.final_active_capacity,
+                final_reinstatement_reserve=item.final_reinstatement_reserve,
+                realized_capacity_utilization=item.realized_capacity_utilization,
+                realized_capacity_utilization_status=item.realized_capacity_utilization_status.value,
+                reinstatement_reserve_utilization=item.reinstatement_reserve_utilization,
+                reinstatement_reserve_utilization_status=item.reinstatement_reserve_utilization_status.value,
+            )
+            for item in row.layer_summaries
+        ),
     )
 
 
@@ -428,4 +446,3 @@ def _currency(result) -> str:
     layer_id = terms.layer_terms[0].layer_id
     program_layers = result.request.input.program.layers
     return next(item.currency for item in program_layers if item.layer_id == layer_id)
-

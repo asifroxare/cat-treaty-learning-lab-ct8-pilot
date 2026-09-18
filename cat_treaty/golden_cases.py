@@ -35,3 +35,28 @@ CT5_GOLDEN_CASE_EVIDENCE = (
     CT5GoldenCaseEvidence("G68", "Capacity-shortfall tails", "tests/test_ct5_analytics.py::test_f37_shortfall_has_own_oep_and_aep_samples"),
 )
 
+
+@dataclass(frozen=True, slots=True)
+class CT6GoldenCaseEvidence:
+    case_id: str
+    scenario: str
+    test_node_id: str
+
+
+CT6_GOLDEN_CASE_EVIDENCE = (
+    CT6GoldenCaseEvidence("G69", "Liveness and readiness", "tests/test_ct6_golden_cases.py::test_g69_liveness_and_readiness_do_not_execute_simulation"),
+    CT6GoldenCaseEvidence("G70", "Catalogue end to end", "tests/test_ct6_golden_cases.py::test_g70_catalogue_end_to_end_returns_both_capacity_views"),
+    CT6GoldenCaseEvidence("G71", "Hours-clause end to end", "tests/test_ct6_golden_cases.py::test_g71_hours_clause_end_to_end_preserves_election_evidence"),
+    CT6GoldenCaseEvidence("G72", "Malformed JSON", "tests/test_ct6_golden_cases.py::test_g72_malformed_json_is_sanitized_400"),
+    CT6GoldenCaseEvidence("G73", "Strict schema failure", "tests/test_ct6_golden_cases.py::test_g73_numeric_string_and_unknown_field_are_rejected"),
+    CT6GoldenCaseEvidence("G74", "Contract blockage", "tests/test_ct6_golden_cases.py::test_g74_invalid_election_blocks_without_downstream_payload"),
+    CT6GoldenCaseEvidence("G75", "Deterministic repeat", "tests/test_ct6_golden_cases.py::test_g75_deterministic_repeat_preserves_results_and_hashes"),
+    CT6GoldenCaseEvidence("G76", "Permitted input permutation", "tests/test_ct6_golden_cases.py::test_g76_permitted_component_permutation_preserves_hashes"),
+    CT6GoldenCaseEvidence("G77", "Response detail", "tests/test_ct6_golden_cases.py::test_g77_full_and_summary_preserve_hashes_warnings_and_election"),
+    CT6GoldenCaseEvidence("G78", "Negative cash settlement", "tests/test_ct6_golden_cases.py::test_g78_negative_cash_settlement_survives_json"),
+    CT6GoldenCaseEvidence("G79", "Zero capacity", "tests/test_ct6_golden_cases.py::test_g79_zero_capacity_is_null_with_explicit_status"),
+    CT6GoldenCaseEvidence("G80", "Credibility warnings", "tests/test_ct6_golden_cases.py::test_g80_cumulative_credibility_warnings_remain_http_200"),
+    CT6GoldenCaseEvidence("G81", "API limit", "tests/test_ct6_golden_cases.py::test_g81_oversized_full_response_is_rejected_without_downgrade"),
+    CT6GoldenCaseEvidence("G82", "Internal failure containment", "tests/test_ct6_golden_cases.py::test_g82_internal_failure_is_sanitized_without_partial_payload"),
+    CT6GoldenCaseEvidence("G83", "API version conflict", "tests/test_ct6_golden_cases.py::test_g83_version_conflict_precedence_is_frozen"),
+)
