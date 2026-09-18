@@ -1,8 +1,8 @@
 # CT7 Independent Review Disposition
 
 **Reviewed draft:** `CT7_IMPLEMENTATION_SPEC.md` v1.0  
-**Revised draft:** v1.2
-**Status:** F01–F08 confirmed closed; F09 revision incorporated and awaiting reviewer confirmation before freeze
+**Revised draft:** v1.3
+**Status:** F01–F09 confirmed closed; F10 text synchronization incorporated and awaiting final freeze confirmation
 
 | ID | Severity | Decision | Revision | Required evidence |
 |---|---|---|---|---|
@@ -15,6 +15,7 @@
 | F07 | Minor | Accepted | E01 and E02 now cite the governing CT2/CT3 specifications and sections. | Experiment contract tests retain citations. |
 | F08 | Cosmetic | Accepted | Replaced the mixed input list with a destination-specific table. | Information-architecture review verifies route placement. |
 | F09 | Major | Accepted | Added §7.2: arithmetic is permitted only in checked `src/visualization/geometry/` modules, accepts authoritative magnitudes solely for proportional screen geometry, and returns branded coordinate/extent types that cannot re-enter business, learning, comparison or audit models. | G102 now requires one passing legitimate tower-scaling fixture, the existing failing actuarial formula fixture, and a failing geometry-leakage fixture. |
+| F10 | Minor | Accepted | Updated the §23 test-strategy checklist to name the complete G102 fixture set already frozen in §7.2/§24. | No new evidence; passing geometry, failing actuarial-formula and failing geometry-leakage fixtures remain mandatory. |
 
 ## Reviewer-answer disposition
 
@@ -28,11 +29,13 @@
 - F09 identified an enforcement conflict between the no-calculation rule and
   mandatory proportional visuals; v1.2 resolves it without widening the
   actuarial boundary.
+- F10 identified stale summary wording only; v1.3 synchronizes §23 with the
+  already-correct §7.2 and G102 requirements.
 
 ## Freeze gate
 
 This disposition does not self-approve the specification. The independent
-reviewer must confirm that the revisions close F09; F01–F08 are already
-confirmed closed. Only then may the
+reviewer must confirm that the §23 synchronization closes F10; F01–F09 are
+already confirmed closed. Only then may the
 document status change from **Revised Draft** to **Frozen**, and only then may
 React scaffolding begin.

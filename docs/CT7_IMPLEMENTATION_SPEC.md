@@ -1,6 +1,6 @@
 # CT7 Learning Lab Frontend, Interactive Experiments and Explanation Experience
 
-**Version:** Revised Draft v1.2 for independent validation
+**Version:** Revised Draft v1.3 for independent validation
 **Product:** EdInsured Catastrophe Treaty Learning Lab  
 **Authority:** CT0 master architecture and frozen CT1–CT6 contracts  
 **Implementation status:** Not authorized until this specification is independently reviewed, revised where necessary and frozen
@@ -10,7 +10,8 @@ integrity gates, an explicit result-freshness model, frozen CT6 error mapping,
 a type-aware no-calculation gate, governed backend-test-count changes,
 non-numeric comparison rules, formula references and destination-specific
 input groups. v1.2 resolves F09 by adding a checked presentation-geometry
-boundary and positive/negative static-gate fixtures.
+boundary and positive/negative static-gate fixtures. v1.3 synchronizes the
+§23 testing checklist with the full G102 fixture set required by §7.2/§24.
 
 ## 1. Purpose
 
@@ -530,7 +531,8 @@ Required test groups:
 - API/OpenAPI compatibility and strict field-name tests;
 - request-builder serialization tests;
 - type-aware branded-number no-actuarial-calculation static source gate,
-  including a mandatory failing-formula fixture;
+  including mandatory passing geometry, failing actuarial-formula and failing
+  geometry-leakage fixtures;
 - run-state and stale-result tests;
 - catalogue and hours end-to-end mocked transport tests;
 - three-way settlement and negative-cash presentation tests;
