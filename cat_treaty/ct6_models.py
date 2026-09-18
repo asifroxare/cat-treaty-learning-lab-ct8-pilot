@@ -543,3 +543,85 @@ class CT6ProblemResponse(StrictWireModel):
     instance: StrictStr
     request_id: StrictStr
     errors: tuple[CT6ErrorItem, ...] = ()
+
+
+class CT6WarningResponse(StrictWireModel):
+    code: StrictStr
+    message: StrictStr
+    source: StrictStr
+    return_period: StrictFloat | None = None
+
+
+class CT6ReconciliationResponse(StrictWireModel):
+    scope: StrictStr
+    identifier: StrictStr
+    passed: StrictBool
+    formula_references: tuple[StrictStr, ...]
+
+
+class CT6LearningFactResponse(StrictWireModel):
+    category: StrictStr
+    metric_name: StrictStr
+    value: StrictFloat | None
+    meaning: StrictStr
+    driver_statement: StrictStr
+    trace_references: tuple[StrictStr, ...]
+
+
+class CT6CandidateWindowResponse(StrictWireModel):
+    candidate_id: StrictStr
+    start: StrictFloat
+    end: StrictFloat
+    component_ids: tuple[StrictStr, ...]
+    subject_loss: NonNegativeFloat
+    admissibility: StrictStr
+    exclusion_codes: tuple[StrictStr, ...]
+    exclusion_reasons: tuple[StrictStr, ...]
+    affected_ids: tuple[StrictStr, ...]
+    rule_reference: StrictStr
+
+
+class CT6CandidateSetResponse(StrictWireModel):
+    candidate_set_id: StrictStr
+    window_ids: tuple[StrictStr, ...]
+    total_subject_loss: NonNegativeFloat
+    total_contractual_recovery: NonNegativeFloat | None
+    admissibility: StrictStr
+    exclusion_codes: tuple[StrictStr, ...]
+    exclusion_reasons: tuple[StrictStr, ...]
+    affected_ids: tuple[StrictStr, ...]
+    rule_reference: StrictStr
+
+
+class CT6PreCapacityResponse(StrictWireModel):
+    occurrence_rows: tuple[PreCapacityOccurrenceResponse, ...] | None
+    annual_rows: tuple[PreCapacityAnnualResponse, ...]
+    tail_analytics: dict[str, object]
+    frequency_analytics: dict[str, object]
+    candidate_windows: tuple[CT6CandidateWindowResponse, ...] = ()
+    candidate_sets: tuple[CT6CandidateSetResponse, ...] = ()
+    selected_candidate_set_id: StrictStr | None = None
+    valid_candidate_set_ids: tuple[StrictStr, ...] = ()
+    selected_election_method: StrictStr | None = None
+
+
+class CT6PostCapacityResponse(StrictWireModel):
+    occurrence_rows: tuple[PostCapacityOccurrenceResponse, ...] | None
+    annual_rows: tuple[PostCapacityAnnualResponse, ...]
+    analytics: dict[str, object]
+
+
+class CT6LearningResponse(StrictWireModel):
+    facts: tuple[CT6LearningFactResponse, ...]
+    reconciliations: tuple[CT6ReconciliationResponse, ...]
+
+
+class CT6SuccessResponse(StrictWireModel):
+    api: CT6ApiResponseInfo
+    request: CT6RequestSummaryResponse
+    versions: CT6VersionsResponse
+    identity: CT6IdentityResponse
+    pre_capacity: CT6PreCapacityResponse
+    post_capacity: CT6PostCapacityResponse
+    learning: CT6LearningResponse
+    warnings: tuple[CT6WarningResponse, ...]
