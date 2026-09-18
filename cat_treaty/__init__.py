@@ -144,6 +144,7 @@ from cat_treaty.ct6_hours import (
     run_hours_clause,
 )
 from cat_treaty.ct6_responses import project_catalogue_success, project_hours_success
+from cat_treaty.api import app, create_app
 from cat_treaty.occurrence_definition import (
     evaluate_hours_clause_scenario,
     generate_candidate_sets,
@@ -437,6 +438,8 @@ __all__ = [
     "run_hours_clause",
     "project_catalogue_success",
     "project_hours_success",
+    "app",
+    "create_app",
     "prepare_ct5_hours_clause_entry",
     "apply_inuring_waterfall",
     "build_loss_basis",

@@ -1,2 +1,3 @@
 ﻿# CT6 strict API wire models.
 pydantic>=2.13,<3
+fastapi>=0.141,<0.142
