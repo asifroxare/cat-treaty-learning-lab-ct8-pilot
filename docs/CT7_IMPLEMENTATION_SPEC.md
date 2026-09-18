@@ -1,9 +1,9 @@
 # CT7 Learning Lab Frontend, Interactive Experiments and Explanation Experience
 
-**Version:** Revised Draft v1.3 for independent validation
+**Version:** Frozen v1.3
 **Product:** EdInsured Catastrophe Treaty Learning Lab  
 **Authority:** CT0 master architecture and frozen CT1–CT6 contracts  
-**Implementation status:** Not authorized until this specification is independently reviewed, revised where necessary and frozen
+**Implementation status:** Frozen after independent review; checkpoint 2 frontend foundation is authorized
 
 **Revision note:** v1.1 resolves review findings F01–F08 by adding learning-
 integrity gates, an explicit result-freshness model, frozen CT6 error mapping,
@@ -633,8 +633,11 @@ CT7 closes only when:
     frontend milestone?
 15. What finding, if any, blocks freezing this specification?
 
-## 28. Freeze rule
+## 28. Frozen-change rule
 
-This draft authorizes review only. React scaffolding, dependency installation
-and frontend implementation must not begin until reviewer findings are
-dispositioned and the document is explicitly marked frozen.
+F01–F10 are independently confirmed closed and this document is frozen.
+Checkpoint 2 may begin. Any change to an authoritative boundary, golden case,
+state mapping, fixture requirement or completion gate requires a versioned
+addendum, explicit impact analysis and independent review before
+implementation. Cosmetic corrections must be recorded and may not alter
+behavior silently.

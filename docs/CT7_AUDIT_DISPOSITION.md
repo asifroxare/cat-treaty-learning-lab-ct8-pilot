@@ -2,7 +2,7 @@
 
 **Reviewed draft:** `CT7_IMPLEMENTATION_SPEC.md` v1.0  
 **Revised draft:** v1.3
-**Status:** F01–F09 confirmed closed; F10 text synchronization incorporated and awaiting final freeze confirmation
+**Status:** F01–F10 independently confirmed closed; CT7 v1.3 frozen
 
 | ID | Severity | Decision | Revision | Required evidence |
 |---|---|---|---|---|
@@ -34,8 +34,8 @@
 
 ## Freeze gate
 
-This disposition does not self-approve the specification. The independent
-reviewer must confirm that the §23 synchronization closes F10; F01–F09 are
-already confirmed closed. Only then may the
-document status change from **Revised Draft** to **Frozen**, and only then may
-React scaffolding begin.
+The independent reviewer confirmed that §23 names the identical passing
+geometry, failing actuarial-formula and failing geometry-leakage fixtures
+required by §7.2 and G102. F10 is closed, no new finding was raised, and the
+reviewer verdict is **Ready to freeze**. CT7 v1.3 is therefore frozen and
+checkpoint 2 React scaffolding may begin.
