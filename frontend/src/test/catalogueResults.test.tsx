@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 
 import { CatalogueResults } from "../features/results/CatalogueResults";
 import { ct6SuccessFixture } from "./fixtures/ct6Success";
@@ -34,5 +34,14 @@ describe("authoritative catalogue result hierarchy", () => {
   it("labels stale authoritative output without changing its values", () => {
     render(<CatalogueResults data={ct6SuccessFixture()} freshness="stale" />);
     expect(screen.getByLabelText("Stale prior authoritative result")).toBeVisible();
+  });
+
+  it("G95 preserves and renders every returned empirical OEP point without interpolation", () => {
+    render(<CatalogueResults data={ct6SuccessFixture()} freshness="current" />);
+    const table = screen.getByRole("table", { name: /authoritative OEP points/i });
+    expect(table.querySelectorAll("tbody tr")).toHaveLength(2);
+    expect(within(table).getByText("$40,500,000.00", { selector: "td" })).toBeVisible();
+    expect(within(table).getByText("$12,000,000.00", { selector: "td" })).toBeVisible();
+    expect(screen.getByRole("img", { name: /subject-loss occurrence exceedance curve/i }).querySelectorAll("circle")).toHaveLength(2);
   });
 });

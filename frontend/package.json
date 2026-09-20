@@ -11,8 +11,11 @@
     "api:generate": "openapi-typescript openapi/ct6.openapi.json -o src/api/generated/ct6.ts",
     "api:check": "python scripts/check_openapi.py",
     "boundary:check": "node scripts/check-boundaries.mjs",
+    "authoritative:check": "node scripts/check-authoritative-types.mjs",
     "content:check": "node scripts/check-content.mjs",
-    "check": "npm run api:check && npm run boundary:check && npm run content:check && npm test && npm run build"
+    "build:audit": "node scripts/audit-build.mjs",
+    "test:real-api": "node scripts/run-real-api.mjs",
+    "check": "npm run api:check && npm run boundary:check && npm run authoritative:check && npm run content:check && npm test && npm run build && npm run build:audit"
   },
   "dependencies": {
     "react": "^19.2.0",

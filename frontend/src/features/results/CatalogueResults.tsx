@@ -2,6 +2,8 @@ import type { AuthoritativeSuccessResponse } from "../../api/authoritative";
 import type { ResultFreshness } from "../../api/runState";
 import { formatCurrency, formatInteger, formatNumber, formatPercent } from "../../formatting/authoritative";
 import { asCssPixels, recoveryBarGeometry } from "../../visualization/geometry/recoveryBars";
+import { tailPointGeometry } from "../../visualization/geometry/tailPlot";
+import { subjectOepPoints } from "./tailSeries";
 import "./CatalogueResults.css";
 
 interface CatalogueResultsProps {
@@ -16,6 +18,8 @@ export function CatalogueResults({ data, freshness }: CatalogueResultsProps) {
   const geometry = preAnnual && postAnnual
     ? recoveryBarGeometry(preAnnual.subject_loss, preAnnual.gross_contractual_recovery_pre_annual_capacity, postAnnual.gross_contractual_recovery)
     : null;
+  const tailPoints = subjectOepPoints(data.pre_capacity.tail_analytics);
+  const tailMaximum = tailPoints[0]?.loss;
 
   return (
     <div className="catalogue-results" aria-label={freshness === "stale" ? "Stale prior authoritative result" : "Current authoritative result"}>
@@ -92,6 +96,24 @@ export function CatalogueResults({ data, freshness }: CatalogueResultsProps) {
       ))}
 
       <OccurrenceTable data={data} currency={currency} />
+
+      {tailMaximum != null && tailPoints.length > 0 && (
+        <section className="result-panel table-panel" aria-labelledby="tail-title">
+          <p className="result-kicker">Empirical points returned by CT6</p>
+          <h2 id="tail-title">Subject-loss OEP curve</h2>
+          <svg viewBox="0 0 100 100" role="img" aria-label="Subject-loss occurrence exceedance curve. Exact authoritative points follow in the table.">
+            {tailPoints.map((point) => {
+              const plotted = tailPointGeometry(point.exceedanceProbability, point.loss, tailMaximum);
+              return <circle key={point.rank} cx={plotted.x} cy={plotted.y} r="1.5" />;
+            })}
+          </svg>
+          <div className="table-scroll"><table>
+            <caption>Authoritative OEP points without interpolation or rebucketing</caption>
+            <thead><tr><th>Rank</th><th>Exceedance probability</th><th>Loss</th></tr></thead>
+            <tbody>{tailPoints.map((point) => <tr key={point.rank}><td>{formatInteger(point.rank)}</td><td>{formatPercent(point.exceedanceProbability)}</td><td>{formatCurrency(point.loss, currency)}</td></tr>)}</tbody>
+          </table></div>
+        </section>
+      )}
 
       <section className="result-panel" aria-labelledby="learning-title">
         <p className="result-kicker">Structured learning facts</p>

@@ -13,7 +13,13 @@ export function ct6SuccessFixture(options: { summary?: boolean; zeroCapacity?: b
     pre_capacity: {
       annual_rows: [{ annual_trial_id: 1, subject_loss: 40_500_000, gross_contractual_recovery_pre_annual_capacity: 20_000_000, insurer_net_loss_pre_annual_capacity: 20_500_000, maximum_occurrence_recovery_pre_annual_capacity: 20_000_000, reconciliation_passed: true }],
       occurrence_rows: options.summary ? null : [{ annual_trial_id: 1, occurrence_sequence: 1, event_id: "E1", subject_loss: 40_500_000, gross_contractual_recovery_pre_annual_capacity: 20_000_000, insurer_net_loss_pre_annual_capacity: 20_500_000, reconciliation_passed: true }],
-      candidate_sets: [], candidate_windows: [], valid_candidate_set_ids: [], selected_candidate_set_id: null, selected_election_method: null, frequency_analytics: {}, tail_analytics: {},
+      candidate_sets: [], candidate_windows: [], valid_candidate_set_ids: [], selected_candidate_set_id: null, selected_election_method: null, frequency_analytics: {}, tail_analytics: {
+        aal_reconciliation_passed: true,
+        perspectives: [{ perspective: "subject_loss", oep_curve: [
+          { rank: 1, loss: 40_500_000, exceedance_probability: 0.5 },
+          { rank: 2, loss: 12_000_000, exceedance_probability: 1 },
+        ] }],
+      },
     },
     post_capacity: {
       annual_rows: [{
