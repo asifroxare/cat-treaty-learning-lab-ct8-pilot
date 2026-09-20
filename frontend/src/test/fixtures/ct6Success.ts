@@ -44,3 +44,26 @@ export function ct6SuccessFixture(options: { summary?: boolean; zeroCapacity?: b
   };
   return acceptAuthoritativeResponse(raw);
 }
+
+export function hoursSuccessFixture(): AuthoritativeSuccessResponse {
+  const base = ct6SuccessFixture();
+  return {
+    ...base,
+    api: { ...base.api, run_mode: "hours_clause" },
+    pre_capacity: {
+      ...base.pre_capacity,
+      selected_election_method: "maximum_contractual_recovery",
+      selected_candidate_set_id: "SET-001",
+      valid_candidate_set_ids: ["SET-001", "SET-002"],
+      candidate_windows: [
+        { candidate_id: "W001", start: 10, end: 82, component_ids: ["C1"], subject_loss: 20_000_000, admissibility: "valid", exclusion_codes: [], exclusion_reasons: [], affected_ids: [], rule_reference: "CT4-hours" },
+        { candidate_id: "W002", start: 100, end: 172, component_ids: ["C2"], subject_loss: 20_000_000, admissibility: "valid", exclusion_codes: [], exclusion_reasons: [], affected_ids: [], rule_reference: "CT4-hours" },
+      ],
+      candidate_sets: [
+        { candidate_set_id: "SET-001", window_ids: ["W001"], total_subject_loss: 20_000_000, total_contractual_recovery: 10_000_000, admissibility: "valid", exclusion_codes: [], exclusion_reasons: [], affected_ids: [], rule_reference: "CT4-hours" },
+        { candidate_set_id: "SET-002", window_ids: ["W002"], total_subject_loss: 20_000_000, total_contractual_recovery: 10_000_000, admissibility: "valid", exclusion_codes: [], exclusion_reasons: [], affected_ids: [], rule_reference: "CT4-hours" },
+        { candidate_set_id: "SET-003", window_ids: ["W001", "W002"], total_subject_loss: 40_000_000, total_contractual_recovery: null, admissibility: "excluded", exclusion_codes: ["duplicate_component", "overlapping_windows"], exclusion_reasons: ["A component cannot be counted twice.", "Selected windows overlap."], affected_ids: ["C1", "C2"], rule_reference: "CT4-hours" },
+      ],
+    },
+  } as unknown as AuthoritativeSuccessResponse;
+}
