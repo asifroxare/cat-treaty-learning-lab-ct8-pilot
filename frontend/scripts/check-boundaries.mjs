@@ -20,6 +20,12 @@ function visit(directory) {
     if (/\beval\s*\(|dangerouslySetInnerHTML/.test(source)) {
       violations.push(`${name}: dynamic/raw HTML execution is forbidden`);
     }
+    if (/^(api|scenarios)\//.test(name) && source.includes("visualization/geometry")) {
+      violations.push(`${name}: API and scenario modules cannot import presentation geometry`);
+    }
+    if ((name.includes("catalogueForm") || name.includes("learning") || name.includes("comparison")) && source.includes("visualization/geometry")) {
+      violations.push(`${name}: request, learning and comparison modules cannot import presentation geometry`);
+    }
   }
 }
 

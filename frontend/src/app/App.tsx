@@ -1,8 +1,11 @@
 import { Navigate, Route, Routes } from "react-router-dom";
 
+import type { CT6Client } from "../api/client";
 import { AppShell } from "../components/AppShell";
 import { FoundationPage } from "../components/FoundationPage";
 import { ExploreTreatyPage } from "../features/explore/ExploreTreatyPage";
+import { CatalogueRunProvider } from "../features/explore/useCatalogueRun";
+import { AuditTrailPage } from "../features/audit/AuditTrailPage";
 import { HomePage } from "../features/home/HomePage";
 
 const routeContent = {
@@ -21,25 +24,22 @@ const routeContent = {
     title: "Keep baseline and scenario independent",
     description: "Two complete CT6 responses will appear side by side without client-calculated deltas or rankings.",
   },
-  audit: {
-    eyebrow: "Audit Trail",
-    title: "Follow every authoritative identity",
-    description: "Request IDs, CT4/CT5 hashes, warnings, reconciliations and rule references will be available here.",
-  },
 } as const;
 
-export function App() {
+export function App({ client }: { client?: CT6Client }) {
   return (
-    <Routes>
-      <Route element={<AppShell />}>
-        <Route index element={<HomePage />} />
-        <Route path="guided" element={<FoundationPage {...routeContent.guided} />} />
-        <Route path="explore" element={<ExploreTreatyPage />} />
-        <Route path="hours-clause" element={<FoundationPage {...routeContent.hours} />} />
-        <Route path="compare" element={<FoundationPage {...routeContent.compare} />} />
-        <Route path="audit" element={<FoundationPage {...routeContent.audit} />} />
-        <Route path="*" element={<Navigate replace to="/" />} />
-      </Route>
-    </Routes>
+    <CatalogueRunProvider client={client}>
+      <Routes>
+        <Route element={<AppShell />}>
+          <Route index element={<HomePage />} />
+          <Route path="guided" element={<FoundationPage {...routeContent.guided} />} />
+          <Route path="explore" element={<ExploreTreatyPage />} />
+          <Route path="hours-clause" element={<FoundationPage {...routeContent.hours} />} />
+          <Route path="compare" element={<FoundationPage {...routeContent.compare} />} />
+          <Route path="audit" element={<AuditTrailPage />} />
+          <Route path="*" element={<Navigate replace to="/" />} />
+        </Route>
+      </Routes>
+    </CatalogueRunProvider>
   );
 }

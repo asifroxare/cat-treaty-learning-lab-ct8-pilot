@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { createContext, useCallback, useContext, useState, type ReactNode } from "react";
 
 import { createCT6Client, type CT6Client, type RunSuccess } from "../../api/client";
 import type { CT6Problem } from "../../api/contract";
@@ -17,7 +17,7 @@ export interface CatalogueRunState {
   submit(): Promise<void>;
 }
 
-export function useCatalogueRun(client: CT6Client = createCT6Client()): CatalogueRunState {
+function useCatalogueRunController(client: CT6Client): CatalogueRunState {
   const [values, setValues] = useState(initialCatalogueForm);
   const [errors, setErrors] = useState<CatalogueFormErrors>({});
   const [executionState, setExecutionState] = useState<ExecutionState>("editing");
@@ -59,4 +59,17 @@ export function useCatalogueRun(client: CT6Client = createCT6Client()): Catalogu
   }, [client, priorSuccess, values]);
 
   return { values, errors, executionState, freshness, priorSuccess, problem, setField, submit };
+}
+
+const CatalogueRunContext = createContext<CatalogueRunState | null>(null);
+
+export function CatalogueRunProvider({ children, client = createCT6Client() }: { children: ReactNode; client?: CT6Client }) {
+  const state = useCatalogueRunController(client);
+  return <CatalogueRunContext.Provider value={state}>{children}</CatalogueRunContext.Provider>;
+}
+
+export function useCatalogueRun(): CatalogueRunState {
+  const state = useContext(CatalogueRunContext);
+  if (!state) throw new Error("useCatalogueRun must be used inside CatalogueRunProvider");
+  return state;
 }

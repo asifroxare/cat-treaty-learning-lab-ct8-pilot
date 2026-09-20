@@ -1,13 +1,9 @@
 import type { ChangeEvent, ReactNode } from "react";
 
-import type { CT6Client } from "../../api/client";
 import type { CatalogueFormValues } from "./catalogueForm";
+import { CatalogueResults } from "../results/CatalogueResults";
 import { useCatalogueRun } from "./useCatalogueRun";
 import "./ExploreTreatyPage.css";
-
-interface ExploreTreatyPageProps {
-  client?: CT6Client;
-}
 
 interface FieldProps {
   id: keyof CatalogueFormValues;
@@ -30,8 +26,8 @@ function Field({ id, label, hint, error, children }: FieldProps) {
   );
 }
 
-export function ExploreTreatyPage({ client }: ExploreTreatyPageProps) {
-  const run = useCatalogueRun(client);
+export function ExploreTreatyPage() {
+  const run = useCatalogueRun();
   const disabled = run.executionState === "submitting";
   const describedBy = (field: keyof CatalogueFormValues) =>
     `${field}-hint${run.errors[field] ? ` ${field}-error` : ""}`;
@@ -140,11 +136,14 @@ export function ExploreTreatyPage({ client }: ExploreTreatyPageProps) {
       {run.executionState === "offline" && <section className="run-message run-message--error"><h2>CT6 is unavailable</h2><p>Check the API connection and retry. No fallback result was created.</p></section>}
       {run.executionState === "server_error" && !run.problem && <section className="run-message run-message--error"><h2>The run could not be completed</h2><p>Retry when the CT6 service is ready. No partial response is displayed.</p></section>}
       {run.priorSuccess && (
-        <section className={`run-message ${run.freshness === "stale" ? "run-message--stale" : "run-message--success"}`} aria-labelledby="result-status-title">
-          <h2 id="result-status-title">{run.freshness === "stale" ? "Previous result — inputs changed" : "Authoritative run completed"}</h2>
-          <p>Request ID: <code>{run.priorSuccess.requestId}</code></p>
-          <p>{run.freshness === "stale" ? "Run the edited request before treating it as current." : "Checkpoint 4 will render the complete authoritative result hierarchy."}</p>
-        </section>
+        <>
+          <section className={`run-message ${run.freshness === "stale" ? "run-message--stale" : "run-message--success"}`} aria-labelledby="result-status-title">
+            <h2 id="result-status-title">{run.freshness === "stale" ? "Previous result — inputs changed" : "Authoritative run completed"}</h2>
+            <p>Request ID: <code>{run.priorSuccess.requestId}</code></p>
+            <p>{run.freshness === "stale" ? "Run the edited request before treating it as current." : "Every value below comes from the completed CT6 response."}</p>
+          </section>
+          <CatalogueResults data={run.priorSuccess.data} freshness={run.freshness} />
+        </>
       )}
     </section>
   );
