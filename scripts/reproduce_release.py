@@ -26,15 +26,16 @@ def main() -> int:
     runtime_env = os.environ.copy()
     runtime_env["PATH"] = f"{scripts}{os.pathsep}{runtime_env.get('PATH', '')}"
     runtime_env["PYTHON"] = str(python)
+    npm = "npm.cmd" if os.name == "nt" else "npm"
 
     run(str(python), "-m", "pip", "install", "-r", "requirements-dev.txt", env=runtime_env)
     run(str(python), "-m", "pip", "install", "-e", ".", env=runtime_env)
     run(str(python), "-m", "pip", "check", env=runtime_env)
     run(str(python), "-m", "pytest", "-q", env=runtime_env)
-    run("npm", "ci", cwd=FRONTEND, env=runtime_env)
-    run("npm", "run", "check", cwd=FRONTEND, env=runtime_env)
-    run("npm", "audit", "--audit-level=high", cwd=FRONTEND, env=runtime_env)
-    run("npm", "run", "test:real-api", cwd=FRONTEND, env=runtime_env)
+    run(npm, "ci", cwd=FRONTEND, env=runtime_env)
+    run(npm, "run", "check", cwd=FRONTEND, env=runtime_env)
+    run(npm, "audit", "--audit-level=high", cwd=FRONTEND, env=runtime_env)
+    run(npm, "run", "test:real-api", cwd=FRONTEND, env=runtime_env)
     print("\nCT7 independent reproduction: PASS", flush=True)
     return 0
 
