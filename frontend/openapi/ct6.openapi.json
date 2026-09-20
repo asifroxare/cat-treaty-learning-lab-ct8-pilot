@@ -1,0 +1,2551 @@
+{
+  "components": {
+    "schemas": {
+      "AnnualTrialDTO": {
+        "additionalProperties": false,
+        "properties": {
+          "annual_trial_id": {
+            "minimum": 1,
+            "title": "Annual Trial Id",
+            "type": "integer"
+          },
+          "catalogue_source_id": {
+            "title": "Catalogue Source Id",
+            "type": "string"
+          },
+          "occurrences": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/SourceOccurrenceDTO"
+            },
+            "title": "Occurrences",
+            "type": "array"
+          }
+        },
+        "required": [
+          "annual_trial_id",
+          "catalogue_source_id"
+        ],
+        "title": "AnnualTrialDTO",
+        "type": "object"
+      },
+      "CT6ApiResponseInfo": {
+        "additionalProperties": false,
+        "properties": {
+          "api_schema_version": {
+            "const": "ct6.0",
+            "default": "ct6.0",
+            "title": "Api Schema Version",
+            "type": "string"
+          },
+          "api_version": {
+            "const": "ct6.0.0",
+            "default": "ct6.0.0",
+            "title": "Api Version",
+            "type": "string"
+          },
+          "client_request_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Client Request Id"
+          },
+          "completion_status": {
+            "const": "complete",
+            "default": "complete",
+            "title": "Completion Status",
+            "type": "string"
+          },
+          "request_id": {
+            "title": "Request Id",
+            "type": "string"
+          },
+          "run_mode": {
+            "$ref": "#/components/schemas/RunMode"
+          }
+        },
+        "required": [
+          "request_id",
+          "client_request_id",
+          "run_mode"
+        ],
+        "title": "CT6ApiResponseInfo",
+        "type": "object"
+      },
+      "CT6CandidateSetResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "admissibility": {
+            "title": "Admissibility",
+            "type": "string"
+          },
+          "affected_ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Affected Ids",
+            "type": "array"
+          },
+          "candidate_set_id": {
+            "title": "Candidate Set Id",
+            "type": "string"
+          },
+          "exclusion_codes": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Exclusion Codes",
+            "type": "array"
+          },
+          "exclusion_reasons": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Exclusion Reasons",
+            "type": "array"
+          },
+          "rule_reference": {
+            "title": "Rule Reference",
+            "type": "string"
+          },
+          "total_contractual_recovery": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Total Contractual Recovery"
+          },
+          "total_subject_loss": {
+            "minimum": 0.0,
+            "title": "Total Subject Loss",
+            "type": "number"
+          },
+          "window_ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Window Ids",
+            "type": "array"
+          }
+        },
+        "required": [
+          "candidate_set_id",
+          "window_ids",
+          "total_subject_loss",
+          "total_contractual_recovery",
+          "admissibility",
+          "exclusion_codes",
+          "exclusion_reasons",
+          "affected_ids",
+          "rule_reference"
+        ],
+        "title": "CT6CandidateSetResponse",
+        "type": "object"
+      },
+      "CT6CandidateWindowResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "admissibility": {
+            "title": "Admissibility",
+            "type": "string"
+          },
+          "affected_ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Affected Ids",
+            "type": "array"
+          },
+          "candidate_id": {
+            "title": "Candidate Id",
+            "type": "string"
+          },
+          "component_ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Component Ids",
+            "type": "array"
+          },
+          "end": {
+            "title": "End",
+            "type": "number"
+          },
+          "exclusion_codes": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Exclusion Codes",
+            "type": "array"
+          },
+          "exclusion_reasons": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Exclusion Reasons",
+            "type": "array"
+          },
+          "rule_reference": {
+            "title": "Rule Reference",
+            "type": "string"
+          },
+          "start": {
+            "title": "Start",
+            "type": "number"
+          },
+          "subject_loss": {
+            "minimum": 0.0,
+            "title": "Subject Loss",
+            "type": "number"
+          }
+        },
+        "required": [
+          "candidate_id",
+          "start",
+          "end",
+          "component_ids",
+          "subject_loss",
+          "admissibility",
+          "exclusion_codes",
+          "exclusion_reasons",
+          "affected_ids",
+          "rule_reference"
+        ],
+        "title": "CT6CandidateWindowResponse",
+        "type": "object"
+      },
+      "CT6ErrorItem": {
+        "additionalProperties": false,
+        "properties": {
+          "code": {
+            "title": "Code",
+            "type": "string"
+          },
+          "message": {
+            "title": "Message",
+            "type": "string"
+          },
+          "path": {
+            "title": "Path",
+            "type": "string"
+          },
+          "rule_reference": {
+            "title": "Rule Reference",
+            "type": "string"
+          }
+        },
+        "required": [
+          "path",
+          "code",
+          "message",
+          "rule_reference"
+        ],
+        "title": "CT6ErrorItem",
+        "type": "object"
+      },
+      "CT6IdentityResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "ct4_input_hash": {
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Ct4 Input Hash",
+            "type": "string"
+          },
+          "ct4_result_hash": {
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Ct4 Result Hash",
+            "type": "string"
+          },
+          "ct5_input_hash": {
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Ct5 Input Hash",
+            "type": "string"
+          },
+          "ct5_result_hash": {
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Ct5 Result Hash",
+            "type": "string"
+          },
+          "simulation_id": {
+            "title": "Simulation Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "simulation_id",
+          "ct4_input_hash",
+          "ct4_result_hash",
+          "ct5_input_hash",
+          "ct5_result_hash"
+        ],
+        "title": "CT6IdentityResponse",
+        "type": "object"
+      },
+      "CT6LearningFactResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "category": {
+            "title": "Category",
+            "type": "string"
+          },
+          "driver_statement": {
+            "title": "Driver Statement",
+            "type": "string"
+          },
+          "meaning": {
+            "title": "Meaning",
+            "type": "string"
+          },
+          "metric_name": {
+            "title": "Metric Name",
+            "type": "string"
+          },
+          "trace_references": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Trace References",
+            "type": "array"
+          },
+          "value": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Value"
+          }
+        },
+        "required": [
+          "category",
+          "metric_name",
+          "value",
+          "meaning",
+          "driver_statement",
+          "trace_references"
+        ],
+        "title": "CT6LearningFactResponse",
+        "type": "object"
+      },
+      "CT6LearningResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "facts": {
+            "items": {
+              "$ref": "#/components/schemas/CT6LearningFactResponse"
+            },
+            "title": "Facts",
+            "type": "array"
+          },
+          "reconciliations": {
+            "items": {
+              "$ref": "#/components/schemas/CT6ReconciliationResponse"
+            },
+            "title": "Reconciliations",
+            "type": "array"
+          }
+        },
+        "required": [
+          "facts",
+          "reconciliations"
+        ],
+        "title": "CT6LearningResponse",
+        "type": "object"
+      },
+      "CT6PostCapacityResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "analytics": {
+            "additionalProperties": true,
+            "title": "Analytics",
+            "type": "object"
+          },
+          "annual_rows": {
+            "items": {
+              "$ref": "#/components/schemas/PostCapacityAnnualResponse"
+            },
+            "title": "Annual Rows",
+            "type": "array"
+          },
+          "occurrence_rows": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/PostCapacityOccurrenceResponse"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Occurrence Rows"
+          }
+        },
+        "required": [
+          "occurrence_rows",
+          "annual_rows",
+          "analytics"
+        ],
+        "title": "CT6PostCapacityResponse",
+        "type": "object"
+      },
+      "CT6PreCapacityResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "annual_rows": {
+            "items": {
+              "$ref": "#/components/schemas/PreCapacityAnnualResponse"
+            },
+            "title": "Annual Rows",
+            "type": "array"
+          },
+          "candidate_sets": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/CT6CandidateSetResponse"
+            },
+            "title": "Candidate Sets",
+            "type": "array"
+          },
+          "candidate_windows": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/CT6CandidateWindowResponse"
+            },
+            "title": "Candidate Windows",
+            "type": "array"
+          },
+          "frequency_analytics": {
+            "additionalProperties": true,
+            "title": "Frequency Analytics",
+            "type": "object"
+          },
+          "occurrence_rows": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/PreCapacityOccurrenceResponse"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Occurrence Rows"
+          },
+          "selected_candidate_set_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Selected Candidate Set Id"
+          },
+          "selected_election_method": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Selected Election Method"
+          },
+          "tail_analytics": {
+            "additionalProperties": true,
+            "title": "Tail Analytics",
+            "type": "object"
+          },
+          "valid_candidate_set_ids": {
+            "default": [],
+            "items": {
+              "type": "string"
+            },
+            "title": "Valid Candidate Set Ids",
+            "type": "array"
+          }
+        },
+        "required": [
+          "occurrence_rows",
+          "annual_rows",
+          "tail_analytics",
+          "frequency_analytics"
+        ],
+        "title": "CT6PreCapacityResponse",
+        "type": "object"
+      },
+      "CT6ProblemResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "code": {
+            "title": "Code",
+            "type": "string"
+          },
+          "detail": {
+            "title": "Detail",
+            "type": "string"
+          },
+          "errors": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/CT6ErrorItem"
+            },
+            "title": "Errors",
+            "type": "array"
+          },
+          "instance": {
+            "title": "Instance",
+            "type": "string"
+          },
+          "request_id": {
+            "title": "Request Id",
+            "type": "string"
+          },
+          "status": {
+            "title": "Status",
+            "type": "integer"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "type": {
+            "title": "Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "type",
+          "title",
+          "status",
+          "code",
+          "detail",
+          "instance",
+          "request_id"
+        ],
+        "title": "CT6ProblemResponse",
+        "type": "object"
+      },
+      "CT6ReconciliationResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "formula_references": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Formula References",
+            "type": "array"
+          },
+          "identifier": {
+            "title": "Identifier",
+            "type": "string"
+          },
+          "passed": {
+            "title": "Passed",
+            "type": "boolean"
+          },
+          "scope": {
+            "title": "Scope",
+            "type": "string"
+          }
+        },
+        "required": [
+          "scope",
+          "identifier",
+          "passed",
+          "formula_references"
+        ],
+        "title": "CT6ReconciliationResponse",
+        "type": "object"
+      },
+      "CT6RequestSummaryResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "layer_ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Layer Ids",
+            "type": "array"
+          },
+          "occurrence_count": {
+            "minimum": 0.0,
+            "title": "Occurrence Count",
+            "type": "integer"
+          },
+          "program_id": {
+            "title": "Program Id",
+            "type": "string"
+          },
+          "reporting_currency": {
+            "title": "Reporting Currency",
+            "type": "string"
+          },
+          "response_detail": {
+            "$ref": "#/components/schemas/ResponseDetail"
+          },
+          "simulation_id": {
+            "title": "Simulation Id",
+            "type": "string"
+          },
+          "trial_count": {
+            "minimum": 1.0,
+            "title": "Trial Count",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "simulation_id",
+          "reporting_currency",
+          "trial_count",
+          "occurrence_count",
+          "program_id",
+          "layer_ids",
+          "response_detail"
+        ],
+        "title": "CT6RequestSummaryResponse",
+        "type": "object"
+      },
+      "CT6SuccessResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "api": {
+            "$ref": "#/components/schemas/CT6ApiResponseInfo"
+          },
+          "identity": {
+            "$ref": "#/components/schemas/CT6IdentityResponse"
+          },
+          "learning": {
+            "$ref": "#/components/schemas/CT6LearningResponse"
+          },
+          "post_capacity": {
+            "$ref": "#/components/schemas/CT6PostCapacityResponse"
+          },
+          "pre_capacity": {
+            "$ref": "#/components/schemas/CT6PreCapacityResponse"
+          },
+          "request": {
+            "$ref": "#/components/schemas/CT6RequestSummaryResponse"
+          },
+          "versions": {
+            "$ref": "#/components/schemas/CT6VersionsResponse"
+          },
+          "warnings": {
+            "items": {
+              "$ref": "#/components/schemas/CT6WarningResponse"
+            },
+            "title": "Warnings",
+            "type": "array"
+          }
+        },
+        "required": [
+          "api",
+          "request",
+          "versions",
+          "identity",
+          "pre_capacity",
+          "post_capacity",
+          "learning",
+          "warnings"
+        ],
+        "title": "CT6SuccessResponse",
+        "type": "object"
+      },
+      "CT6VersionsResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "ct2_engine_version": {
+            "title": "Ct2 Engine Version",
+            "type": "string"
+          },
+          "ct2_schema_version": {
+            "title": "Ct2 Schema Version",
+            "type": "string"
+          },
+          "ct3_engine_version": {
+            "title": "Ct3 Engine Version",
+            "type": "string"
+          },
+          "ct3_schema_version": {
+            "title": "Ct3 Schema Version",
+            "type": "string"
+          },
+          "ct4_engine_version": {
+            "title": "Ct4 Engine Version",
+            "type": "string"
+          },
+          "ct4_schema_version": {
+            "title": "Ct4 Schema Version",
+            "type": "string"
+          },
+          "ct5_engine_version": {
+            "title": "Ct5 Engine Version",
+            "type": "string"
+          },
+          "ct5_schema_version": {
+            "title": "Ct5 Schema Version",
+            "type": "string"
+          },
+          "ct6_api_version": {
+            "const": "ct6.0.0",
+            "default": "ct6.0.0",
+            "title": "Ct6 Api Version",
+            "type": "string"
+          },
+          "ct6_schema_version": {
+            "const": "ct6.0",
+            "default": "ct6.0",
+            "title": "Ct6 Schema Version",
+            "type": "string"
+          }
+        },
+        "required": [
+          "ct2_engine_version",
+          "ct2_schema_version",
+          "ct3_engine_version",
+          "ct3_schema_version",
+          "ct4_engine_version",
+          "ct4_schema_version",
+          "ct5_engine_version",
+          "ct5_schema_version"
+        ],
+        "title": "CT6VersionsResponse",
+        "type": "object"
+      },
+      "CT6WarningResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "code": {
+            "title": "Code",
+            "type": "string"
+          },
+          "message": {
+            "title": "Message",
+            "type": "string"
+          },
+          "return_period": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Return Period"
+          },
+          "source": {
+            "title": "Source",
+            "type": "string"
+          }
+        },
+        "required": [
+          "code",
+          "message",
+          "source"
+        ],
+        "title": "CT6WarningResponse",
+        "type": "object"
+      },
+      "CapacityBasis": {
+        "description": "Supported treaty-capacity measurement basis.",
+        "enum": [
+          "payable_placed_share"
+        ],
+        "title": "CapacityBasis",
+        "type": "string"
+      },
+      "CatalogueInputDTO": {
+        "additionalProperties": false,
+        "properties": {
+          "program": {
+            "$ref": "#/components/schemas/ProgramTermsDTO"
+          },
+          "simulation": {
+            "$ref": "#/components/schemas/SimulationHeaderDTO"
+          },
+          "treaty_terms": {
+            "$ref": "#/components/schemas/TreatyTermsDTO"
+          },
+          "trials": {
+            "items": {
+              "$ref": "#/components/schemas/AnnualTrialDTO"
+            },
+            "title": "Trials",
+            "type": "array"
+          }
+        },
+        "required": [
+          "simulation",
+          "trials",
+          "program",
+          "treaty_terms"
+        ],
+        "title": "CatalogueInputDTO",
+        "type": "object"
+      },
+      "CatalogueRunRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "api_schema_version": {
+            "const": "ct6.0",
+            "title": "Api Schema Version",
+            "type": "string"
+          },
+          "client_request_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Client Request Id"
+          },
+          "input": {
+            "$ref": "#/components/schemas/CatalogueInputDTO"
+          },
+          "response_detail": {
+            "$ref": "#/components/schemas/ResponseDetail",
+            "default": "full"
+          }
+        },
+        "required": [
+          "api_schema_version",
+          "input"
+        ],
+        "title": "CatalogueRunRequest",
+        "type": "object"
+      },
+      "CatalogueSourceMode": {
+        "enum": [
+          "generated",
+          "supplied"
+        ],
+        "title": "CatalogueSourceMode",
+        "type": "string"
+      },
+      "HoursComponentDTO": {
+        "additionalProperties": false,
+        "properties": {
+          "causal_event_id": {
+            "title": "Causal Event Id",
+            "type": "string"
+          },
+          "component_id": {
+            "title": "Component Id",
+            "type": "string"
+          },
+          "peril": {
+            "title": "Peril",
+            "type": "string"
+          },
+          "region": {
+            "title": "Region",
+            "type": "string"
+          },
+          "source_reference": {
+            "title": "Source Reference",
+            "type": "string"
+          },
+          "subject_loss": {
+            "minimum": 0,
+            "title": "Subject Loss",
+            "type": "number"
+          },
+          "timestamp": {
+            "minimum": 0,
+            "title": "Timestamp",
+            "type": "number"
+          }
+        },
+        "required": [
+          "component_id",
+          "subject_loss",
+          "timestamp",
+          "peril",
+          "region",
+          "causal_event_id",
+          "source_reference"
+        ],
+        "title": "HoursComponentDTO",
+        "type": "object"
+      },
+      "HoursElectionMethod": {
+        "enum": [
+          "earliest_valid_window",
+          "maximum_subject_loss",
+          "maximum_contractual_recovery",
+          "manual"
+        ],
+        "title": "HoursElectionMethod",
+        "type": "string"
+      },
+      "HoursInputDTO": {
+        "additionalProperties": false,
+        "properties": {
+          "components": {
+            "items": {
+              "$ref": "#/components/schemas/HoursComponentDTO"
+            },
+            "title": "Components",
+            "type": "array"
+          },
+          "program": {
+            "$ref": "#/components/schemas/ProgramTermsDTO"
+          },
+          "program_source": {
+            "$ref": "#/components/schemas/SourceOccurrenceDTO"
+          },
+          "scenario_id": {
+            "title": "Scenario Id",
+            "type": "string"
+          },
+          "source_reference": {
+            "title": "Source Reference",
+            "type": "string"
+          },
+          "source_version": {
+            "title": "Source Version",
+            "type": "string"
+          },
+          "tail_configuration": {
+            "$ref": "#/components/schemas/TailConfigurationDTO",
+            "default": {
+              "probability_levels": [
+                0.95,
+                0.99,
+                0.995
+              ],
+              "return_periods": [
+                2.0,
+                5.0,
+                10.0,
+                20.0,
+                50.0,
+                100.0,
+                200.0
+              ],
+              "tvar_levels": [
+                0.99
+              ]
+            }
+          },
+          "terms": {
+            "$ref": "#/components/schemas/HoursTermsDTO"
+          },
+          "tolerance_profile": {
+            "$ref": "#/components/schemas/ToleranceProfileDTO",
+            "default": {
+              "absolute_currency_tolerance": 1e-06,
+              "relative_tolerance": 1e-12
+            }
+          },
+          "treaty_terms": {
+            "$ref": "#/components/schemas/TreatyTermsDTO"
+          }
+        },
+        "required": [
+          "scenario_id",
+          "source_version",
+          "components",
+          "terms",
+          "program_source",
+          "program",
+          "treaty_terms",
+          "source_reference"
+        ],
+        "title": "HoursInputDTO",
+        "type": "object"
+      },
+      "HoursRunRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "api_schema_version": {
+            "const": "ct6.0",
+            "title": "Api Schema Version",
+            "type": "string"
+          },
+          "client_request_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Client Request Id"
+          },
+          "input": {
+            "$ref": "#/components/schemas/HoursInputDTO"
+          },
+          "response_detail": {
+            "$ref": "#/components/schemas/ResponseDetail",
+            "default": "full"
+          }
+        },
+        "required": [
+          "api_schema_version",
+          "input"
+        ],
+        "title": "HoursRunRequest",
+        "type": "object"
+      },
+      "HoursTermsDTO": {
+        "additionalProperties": false,
+        "properties": {
+          "authorized_election_methods": {
+            "items": {
+              "$ref": "#/components/schemas/HoursElectionMethod"
+            },
+            "title": "Authorized Election Methods",
+            "type": "array"
+          },
+          "causal_link_required": {
+            "title": "Causal Link Required",
+            "type": "boolean"
+          },
+          "hours_duration": {
+            "exclusiveMinimum": 0,
+            "title": "Hours Duration",
+            "type": "number"
+          },
+          "manual_candidate_set_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Manual Candidate Set Id"
+          },
+          "permitted_perils": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Permitted Perils",
+            "type": "array"
+          },
+          "permitted_regions": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Permitted Regions",
+            "type": "array"
+          },
+          "rule_reference": {
+            "title": "Rule Reference",
+            "type": "string"
+          },
+          "selected_election_method": {
+            "$ref": "#/components/schemas/HoursElectionMethod"
+          },
+          "treaty_term_end": {
+            "exclusiveMinimum": 0,
+            "title": "Treaty Term End",
+            "type": "number"
+          },
+          "treaty_term_start": {
+            "minimum": 0,
+            "title": "Treaty Term Start",
+            "type": "number"
+          }
+        },
+        "required": [
+          "treaty_term_start",
+          "treaty_term_end",
+          "hours_duration",
+          "permitted_perils",
+          "permitted_regions",
+          "causal_link_required",
+          "authorized_election_methods",
+          "selected_election_method",
+          "manual_candidate_set_id",
+          "rule_reference"
+        ],
+        "title": "HoursTermsDTO",
+        "type": "object"
+      },
+      "InuringCoverDTO": {
+        "additionalProperties": false,
+        "properties": {
+          "aggregate_remaining_before": {
+            "anyOf": [
+              {
+                "minimum": 0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Aggregate Remaining Before"
+          },
+          "cession_rate": {
+            "anyOf": [
+              {
+                "maximum": 1,
+                "minimum": 0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Cession Rate"
+          },
+          "cover_id": {
+            "title": "Cover Id",
+            "type": "string"
+          },
+          "cover_type": {
+            "$ref": "#/components/schemas/InuringCoverType"
+          },
+          "currency": {
+            "title": "Currency",
+            "type": "string"
+          },
+          "description": {
+            "title": "Description",
+            "type": "string"
+          },
+          "occurrence_limit": {
+            "anyOf": [
+              {
+                "exclusiveMinimum": 0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Occurrence Limit"
+          },
+          "order": {
+            "minimum": 1,
+            "title": "Order",
+            "type": "integer"
+          },
+          "recovery_source_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Recovery Source Id"
+          },
+          "rule_reference": {
+            "title": "Rule Reference",
+            "type": "string"
+          },
+          "scope_fraction": {
+            "maximum": 1,
+            "minimum": 0,
+            "title": "Scope Fraction",
+            "type": "number"
+          },
+          "source_reference": {
+            "title": "Source Reference",
+            "type": "string"
+          },
+          "supplied_recovery": {
+            "anyOf": [
+              {
+                "minimum": 0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Supplied Recovery"
+          },
+          "valuation_mode": {
+            "$ref": "#/components/schemas/InuringValuationMode"
+          }
+        },
+        "required": [
+          "cover_id",
+          "cover_type",
+          "order",
+          "valuation_mode",
+          "scope_fraction",
+          "currency",
+          "description",
+          "source_reference",
+          "rule_reference"
+        ],
+        "title": "InuringCoverDTO",
+        "type": "object"
+      },
+      "InuringCoverType": {
+        "description": "Inuring cover labels supported by the CT2 contract.",
+        "enum": [
+          "quota_share",
+          "surplus_share",
+          "facultative",
+          "per_risk_xl",
+          "other"
+        ],
+        "title": "InuringCoverType",
+        "type": "string"
+      },
+      "InuringValuationMode": {
+        "description": "How a CT2 inuring recovery enters the waterfall.",
+        "enum": [
+          "calculated_proportional",
+          "supplied_recovery"
+        ],
+        "title": "InuringValuationMode",
+        "type": "string"
+      },
+      "LayerDTO": {
+        "additionalProperties": false,
+        "properties": {
+          "attachment": {
+            "minimum": 0,
+            "title": "Attachment",
+            "type": "number"
+          },
+          "ceded_share": {
+            "maximum": 1,
+            "minimum": 0,
+            "title": "Ceded Share",
+            "type": "number"
+          },
+          "currency": {
+            "title": "Currency",
+            "type": "string"
+          },
+          "description": {
+            "title": "Description",
+            "type": "string"
+          },
+          "layer_id": {
+            "title": "Layer Id",
+            "type": "string"
+          },
+          "occurrence_limit": {
+            "exclusiveMinimum": 0,
+            "title": "Occurrence Limit",
+            "type": "number"
+          },
+          "placement_share": {
+            "maximum": 1,
+            "minimum": 0,
+            "title": "Placement Share",
+            "type": "number"
+          },
+          "rule_reference": {
+            "title": "Rule Reference",
+            "type": "string"
+          },
+          "source_reference": {
+            "title": "Source Reference",
+            "type": "string"
+          }
+        },
+        "required": [
+          "layer_id",
+          "attachment",
+          "occurrence_limit",
+          "ceded_share",
+          "placement_share",
+          "currency",
+          "description",
+          "source_reference",
+          "rule_reference"
+        ],
+        "title": "LayerDTO",
+        "type": "object"
+      },
+      "LayerTermsDTO": {
+        "additionalProperties": false,
+        "properties": {
+          "capacity_basis": {
+            "$ref": "#/components/schemas/CapacityBasis",
+            "default": "payable_placed_share"
+          },
+          "layer_id": {
+            "title": "Layer Id",
+            "type": "string"
+          },
+          "original_layer_premium": {
+            "minimum": 0,
+            "title": "Original Layer Premium",
+            "type": "number"
+          },
+          "premium_basis_declaration": {
+            "title": "Premium Basis Declaration",
+            "type": "string"
+          },
+          "reinstatement_tranches": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/ReinstatementTrancheDTO"
+            },
+            "title": "Reinstatement Tranches",
+            "type": "array"
+          },
+          "rule_reference": {
+            "title": "Rule Reference",
+            "type": "string"
+          },
+          "settlement_mode": {
+            "$ref": "#/components/schemas/SettlementMode"
+          },
+          "source_reference": {
+            "title": "Source Reference",
+            "type": "string"
+          },
+          "treaty_term_end": {
+            "exclusiveMinimum": 0,
+            "title": "Treaty Term End",
+            "type": "number"
+          },
+          "treaty_term_start": {
+            "minimum": 0,
+            "title": "Treaty Term Start",
+            "type": "number"
+          }
+        },
+        "required": [
+          "layer_id",
+          "original_layer_premium",
+          "premium_basis_declaration",
+          "treaty_term_start",
+          "treaty_term_end",
+          "settlement_mode",
+          "source_reference",
+          "rule_reference"
+        ],
+        "title": "LayerTermsDTO",
+        "type": "object"
+      },
+      "LossBasisDTO": {
+        "additionalProperties": false,
+        "properties": {
+          "components": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/LossComponentDTO"
+            },
+            "title": "Components",
+            "type": "array"
+          },
+          "ground_up_loss": {
+            "anyOf": [
+              {
+                "minimum": 0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Ground Up Loss"
+          },
+          "initial_insured_loss": {
+            "minimum": 0,
+            "title": "Initial Insured Loss",
+            "type": "number"
+          },
+          "occurrence_id": {
+            "title": "Occurrence Id",
+            "type": "string"
+          },
+          "reporting_currency": {
+            "title": "Reporting Currency",
+            "type": "string"
+          },
+          "source_reference": {
+            "title": "Source Reference",
+            "type": "string"
+          },
+          "source_stage_declaration": {
+            "title": "Source Stage Declaration",
+            "type": "string"
+          }
+        },
+        "required": [
+          "occurrence_id",
+          "reporting_currency",
+          "source_stage_declaration",
+          "source_reference",
+          "initial_insured_loss"
+        ],
+        "title": "LossBasisDTO",
+        "type": "object"
+      },
+      "LossComponentCategory": {
+        "description": "Contract-defined additions and deductions in F03.",
+        "enum": [
+          "loss_adjustment_expense",
+          "other_included_cost",
+          "salvage",
+          "subrogation",
+          "other_non_inuring_recovery",
+          "contract_exclusion"
+        ],
+        "title": "LossComponentCategory",
+        "type": "string"
+      },
+      "LossComponentDTO": {
+        "additionalProperties": false,
+        "properties": {
+          "amount": {
+            "minimum": 0,
+            "title": "Amount",
+            "type": "number"
+          },
+          "category": {
+            "$ref": "#/components/schemas/LossComponentCategory"
+          },
+          "component_id": {
+            "title": "Component Id",
+            "type": "string"
+          },
+          "included": {
+            "title": "Included",
+            "type": "boolean"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "rule_reference": {
+            "title": "Rule Reference",
+            "type": "string"
+          },
+          "source_reference": {
+            "title": "Source Reference",
+            "type": "string"
+          }
+        },
+        "required": [
+          "component_id",
+          "category",
+          "label",
+          "amount",
+          "included",
+          "source_reference",
+          "rule_reference"
+        ],
+        "title": "LossComponentDTO",
+        "type": "object"
+      },
+      "OverlapCoordination": {
+        "enum": [
+          "none",
+          "priority"
+        ],
+        "title": "OverlapCoordination",
+        "type": "string"
+      },
+      "PostCapacityAnnualResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "annual_trial_id": {
+            "minimum": 1.0,
+            "title": "Annual Trial Id",
+            "type": "integer"
+          },
+          "capacity_constrained_recovery_shortfall": {
+            "minimum": 0.0,
+            "title": "Capacity Constrained Recovery Shortfall",
+            "type": "number"
+          },
+          "gross_contractual_recovery": {
+            "minimum": 0.0,
+            "title": "Gross Contractual Recovery",
+            "type": "number"
+          },
+          "insurer_net_subject_loss": {
+            "minimum": 0.0,
+            "title": "Insurer Net Subject Loss",
+            "type": "number"
+          },
+          "layer_summaries": {
+            "items": {
+              "$ref": "#/components/schemas/PostCapacityLayerAnnualResponse"
+            },
+            "title": "Layer Summaries",
+            "type": "array"
+          },
+          "maximum_occurrence_recovery": {
+            "minimum": 0.0,
+            "title": "Maximum Occurrence Recovery",
+            "type": "number"
+          },
+          "net_cash_settlement": {
+            "title": "Net Cash Settlement",
+            "type": "number"
+          },
+          "reconciliation_passed": {
+            "title": "Reconciliation Passed",
+            "type": "boolean"
+          },
+          "reinstatement_premium_payable": {
+            "minimum": 0.0,
+            "title": "Reinstatement Premium Payable",
+            "type": "number"
+          },
+          "subject_loss": {
+            "minimum": 0.0,
+            "title": "Subject Loss",
+            "type": "number"
+          }
+        },
+        "required": [
+          "annual_trial_id",
+          "subject_loss",
+          "gross_contractual_recovery",
+          "capacity_constrained_recovery_shortfall",
+          "insurer_net_subject_loss",
+          "reinstatement_premium_payable",
+          "net_cash_settlement",
+          "maximum_occurrence_recovery",
+          "reconciliation_passed",
+          "layer_summaries"
+        ],
+        "title": "PostCapacityAnnualResponse",
+        "type": "object"
+      },
+      "PostCapacityLayerAnnualResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "annual_trial_id": {
+            "minimum": 1.0,
+            "title": "Annual Trial Id",
+            "type": "integer"
+          },
+          "final_active_capacity": {
+            "minimum": 0.0,
+            "title": "Final Active Capacity",
+            "type": "number"
+          },
+          "final_reinstatement_reserve": {
+            "minimum": 0.0,
+            "title": "Final Reinstatement Reserve",
+            "type": "number"
+          },
+          "initial_capacity": {
+            "minimum": 0.0,
+            "title": "Initial Capacity",
+            "type": "number"
+          },
+          "initial_reinstatement_reserve": {
+            "minimum": 0.0,
+            "title": "Initial Reinstatement Reserve",
+            "type": "number"
+          },
+          "layer_id": {
+            "title": "Layer Id",
+            "type": "string"
+          },
+          "realized_capacity_utilization": {
+            "anyOf": [
+              {
+                "maximum": 1.0,
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Realized Capacity Utilization"
+          },
+          "realized_capacity_utilization_status": {
+            "title": "Realized Capacity Utilization Status",
+            "type": "string"
+          },
+          "reinstatement_reserve_utilization": {
+            "anyOf": [
+              {
+                "maximum": 1.0,
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reinstatement Reserve Utilization"
+          },
+          "reinstatement_reserve_utilization_status": {
+            "title": "Reinstatement Reserve Utilization Status",
+            "type": "string"
+          },
+          "total_recovery": {
+            "minimum": 0.0,
+            "title": "Total Recovery",
+            "type": "number"
+          },
+          "total_reinstated": {
+            "minimum": 0.0,
+            "title": "Total Reinstated",
+            "type": "number"
+          }
+        },
+        "required": [
+          "annual_trial_id",
+          "layer_id",
+          "initial_capacity",
+          "initial_reinstatement_reserve",
+          "total_recovery",
+          "total_reinstated",
+          "final_active_capacity",
+          "final_reinstatement_reserve",
+          "realized_capacity_utilization",
+          "realized_capacity_utilization_status",
+          "reinstatement_reserve_utilization",
+          "reinstatement_reserve_utilization_status"
+        ],
+        "title": "PostCapacityLayerAnnualResponse",
+        "type": "object"
+      },
+      "PostCapacityLayerEventResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "active_capacity_after_recovery": {
+            "minimum": 0.0,
+            "title": "Active Capacity After Recovery",
+            "type": "number"
+          },
+          "active_capacity_before": {
+            "minimum": 0.0,
+            "title": "Active Capacity Before",
+            "type": "number"
+          },
+          "active_capacity_for_next_event": {
+            "minimum": 0.0,
+            "title": "Active Capacity For Next Event",
+            "type": "number"
+          },
+          "amount_reinstated": {
+            "minimum": 0.0,
+            "title": "Amount Reinstated",
+            "type": "number"
+          },
+          "annual_trial_id": {
+            "minimum": 1.0,
+            "title": "Annual Trial Id",
+            "type": "integer"
+          },
+          "capacity_constrained_recovery_shortfall": {
+            "minimum": 0.0,
+            "title": "Capacity Constrained Recovery Shortfall",
+            "type": "number"
+          },
+          "event_id": {
+            "title": "Event Id",
+            "type": "string"
+          },
+          "gross_contractual_recovery": {
+            "minimum": 0.0,
+            "title": "Gross Contractual Recovery",
+            "type": "number"
+          },
+          "layer_id": {
+            "title": "Layer Id",
+            "type": "string"
+          },
+          "occurrence_sequence": {
+            "minimum": 1.0,
+            "title": "Occurrence Sequence",
+            "type": "integer"
+          },
+          "pre_annual_capacity_recovery": {
+            "minimum": 0.0,
+            "title": "Pre Annual Capacity Recovery",
+            "type": "number"
+          },
+          "reinstatement_premium_payable": {
+            "minimum": 0.0,
+            "title": "Reinstatement Premium Payable",
+            "type": "number"
+          }
+        },
+        "required": [
+          "annual_trial_id",
+          "occurrence_sequence",
+          "event_id",
+          "layer_id",
+          "pre_annual_capacity_recovery",
+          "active_capacity_before",
+          "gross_contractual_recovery",
+          "capacity_constrained_recovery_shortfall",
+          "active_capacity_after_recovery",
+          "amount_reinstated",
+          "active_capacity_for_next_event",
+          "reinstatement_premium_payable"
+        ],
+        "title": "PostCapacityLayerEventResponse",
+        "type": "object"
+      },
+      "PostCapacityOccurrenceResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "annual_trial_id": {
+            "minimum": 1.0,
+            "title": "Annual Trial Id",
+            "type": "integer"
+          },
+          "capacity_constrained_recovery_shortfall": {
+            "minimum": 0.0,
+            "title": "Capacity Constrained Recovery Shortfall",
+            "type": "number"
+          },
+          "event_id": {
+            "title": "Event Id",
+            "type": "string"
+          },
+          "gross_contractual_recovery": {
+            "minimum": 0.0,
+            "title": "Gross Contractual Recovery",
+            "type": "number"
+          },
+          "gross_contractual_recovery_pre_annual_capacity": {
+            "minimum": 0.0,
+            "title": "Gross Contractual Recovery Pre Annual Capacity",
+            "type": "number"
+          },
+          "insurer_net_subject_loss": {
+            "minimum": 0.0,
+            "title": "Insurer Net Subject Loss",
+            "type": "number"
+          },
+          "layer_event_rows": {
+            "items": {
+              "$ref": "#/components/schemas/PostCapacityLayerEventResponse"
+            },
+            "title": "Layer Event Rows",
+            "type": "array"
+          },
+          "net_cash_settlement": {
+            "title": "Net Cash Settlement",
+            "type": "number"
+          },
+          "occurrence_sequence": {
+            "minimum": 1.0,
+            "title": "Occurrence Sequence",
+            "type": "integer"
+          },
+          "reconciliation_passed": {
+            "title": "Reconciliation Passed",
+            "type": "boolean"
+          },
+          "reinstatement_premium_payable": {
+            "minimum": 0.0,
+            "title": "Reinstatement Premium Payable",
+            "type": "number"
+          },
+          "subject_loss": {
+            "minimum": 0.0,
+            "title": "Subject Loss",
+            "type": "number"
+          }
+        },
+        "required": [
+          "annual_trial_id",
+          "occurrence_sequence",
+          "event_id",
+          "subject_loss",
+          "gross_contractual_recovery_pre_annual_capacity",
+          "gross_contractual_recovery",
+          "capacity_constrained_recovery_shortfall",
+          "insurer_net_subject_loss",
+          "reinstatement_premium_payable",
+          "net_cash_settlement",
+          "reconciliation_passed",
+          "layer_event_rows"
+        ],
+        "title": "PostCapacityOccurrenceResponse",
+        "type": "object"
+      },
+      "PreCapacityAnnualResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "annual_trial_id": {
+            "minimum": 1.0,
+            "title": "Annual Trial Id",
+            "type": "integer"
+          },
+          "gross_contractual_recovery_pre_annual_capacity": {
+            "minimum": 0.0,
+            "title": "Gross Contractual Recovery Pre Annual Capacity",
+            "type": "number"
+          },
+          "insurer_net_loss_pre_annual_capacity": {
+            "minimum": 0.0,
+            "title": "Insurer Net Loss Pre Annual Capacity",
+            "type": "number"
+          },
+          "maximum_occurrence_recovery_pre_annual_capacity": {
+            "minimum": 0.0,
+            "title": "Maximum Occurrence Recovery Pre Annual Capacity",
+            "type": "number"
+          },
+          "reconciliation_passed": {
+            "title": "Reconciliation Passed",
+            "type": "boolean"
+          },
+          "subject_loss": {
+            "minimum": 0.0,
+            "title": "Subject Loss",
+            "type": "number"
+          }
+        },
+        "required": [
+          "annual_trial_id",
+          "subject_loss",
+          "gross_contractual_recovery_pre_annual_capacity",
+          "insurer_net_loss_pre_annual_capacity",
+          "maximum_occurrence_recovery_pre_annual_capacity",
+          "reconciliation_passed"
+        ],
+        "title": "PreCapacityAnnualResponse",
+        "type": "object"
+      },
+      "PreCapacityOccurrenceResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "annual_trial_id": {
+            "minimum": 1.0,
+            "title": "Annual Trial Id",
+            "type": "integer"
+          },
+          "event_id": {
+            "title": "Event Id",
+            "type": "string"
+          },
+          "gross_contractual_recovery_pre_annual_capacity": {
+            "minimum": 0.0,
+            "title": "Gross Contractual Recovery Pre Annual Capacity",
+            "type": "number"
+          },
+          "insurer_net_loss_pre_annual_capacity": {
+            "minimum": 0.0,
+            "title": "Insurer Net Loss Pre Annual Capacity",
+            "type": "number"
+          },
+          "occurrence_sequence": {
+            "minimum": 1.0,
+            "title": "Occurrence Sequence",
+            "type": "integer"
+          },
+          "reconciliation_passed": {
+            "title": "Reconciliation Passed",
+            "type": "boolean"
+          },
+          "subject_loss": {
+            "minimum": 0.0,
+            "title": "Subject Loss",
+            "type": "number"
+          }
+        },
+        "required": [
+          "annual_trial_id",
+          "occurrence_sequence",
+          "event_id",
+          "subject_loss",
+          "gross_contractual_recovery_pre_annual_capacity",
+          "insurer_net_loss_pre_annual_capacity",
+          "reconciliation_passed"
+        ],
+        "title": "PreCapacityOccurrenceResponse",
+        "type": "object"
+      },
+      "ProgramTermsDTO": {
+        "additionalProperties": false,
+        "properties": {
+          "description": {
+            "title": "Description",
+            "type": "string"
+          },
+          "intentional_gap_acknowledged": {
+            "title": "Intentional Gap Acknowledged",
+            "type": "boolean"
+          },
+          "layers": {
+            "items": {
+              "$ref": "#/components/schemas/LayerDTO"
+            },
+            "title": "Layers",
+            "type": "array"
+          },
+          "overlap_coordination": {
+            "$ref": "#/components/schemas/OverlapCoordination"
+          },
+          "priority_order": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Priority Order"
+          },
+          "program_id": {
+            "title": "Program Id",
+            "type": "string"
+          },
+          "rule_reference": {
+            "title": "Rule Reference",
+            "type": "string"
+          },
+          "source_reference": {
+            "title": "Source Reference",
+            "type": "string"
+          }
+        },
+        "required": [
+          "program_id",
+          "layers",
+          "intentional_gap_acknowledged",
+          "overlap_coordination",
+          "priority_order",
+          "description",
+          "source_reference",
+          "rule_reference"
+        ],
+        "title": "ProgramTermsDTO",
+        "type": "object"
+      },
+      "ReinstatementChargeType": {
+        "enum": [
+          "free",
+          "paid"
+        ],
+        "title": "ReinstatementChargeType",
+        "type": "string"
+      },
+      "ReinstatementTimeBasis": {
+        "enum": [
+          "full_time",
+          "pro_rata_remaining_term"
+        ],
+        "title": "ReinstatementTimeBasis",
+        "type": "string"
+      },
+      "ReinstatementTrancheDTO": {
+        "additionalProperties": false,
+        "properties": {
+          "charge_type": {
+            "$ref": "#/components/schemas/ReinstatementChargeType"
+          },
+          "premium_rate": {
+            "minimum": 0,
+            "title": "Premium Rate",
+            "type": "number"
+          },
+          "rule_reference": {
+            "title": "Rule Reference",
+            "type": "string"
+          },
+          "sequence": {
+            "minimum": 1,
+            "title": "Sequence",
+            "type": "integer"
+          },
+          "source_reference": {
+            "title": "Source Reference",
+            "type": "string"
+          },
+          "time_basis": {
+            "$ref": "#/components/schemas/ReinstatementTimeBasis"
+          }
+        },
+        "required": [
+          "sequence",
+          "premium_rate",
+          "time_basis",
+          "charge_type",
+          "source_reference",
+          "rule_reference"
+        ],
+        "title": "ReinstatementTrancheDTO",
+        "type": "object"
+      },
+      "ResponseDetail": {
+        "enum": [
+          "full",
+          "summary"
+        ],
+        "title": "ResponseDetail",
+        "type": "string"
+      },
+      "RunMode": {
+        "enum": [
+          "catalogue",
+          "hours_clause"
+        ],
+        "title": "RunMode",
+        "type": "string"
+      },
+      "SettlementMode": {
+        "description": "How reinstatement premium is presented in the cash settlement.",
+        "enum": [
+          "paid_separately",
+          "deducted_from_settlement"
+        ],
+        "title": "SettlementMode",
+        "type": "string"
+      },
+      "SimulationHeaderDTO": {
+        "additionalProperties": false,
+        "properties": {
+          "catalogue_source_mode": {
+            "$ref": "#/components/schemas/CatalogueSourceMode"
+          },
+          "catalogue_version": {
+            "title": "Catalogue Version",
+            "type": "string"
+          },
+          "simulation_id": {
+            "title": "Simulation Id",
+            "type": "string"
+          },
+          "simulation_seed": {
+            "anyOf": [
+              {
+                "minimum": 0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Simulation Seed"
+          },
+          "source_version": {
+            "title": "Source Version",
+            "type": "string"
+          },
+          "tail_configuration": {
+            "$ref": "#/components/schemas/TailConfigurationDTO",
+            "default": {
+              "probability_levels": [
+                0.95,
+                0.99,
+                0.995
+              ],
+              "return_periods": [
+                2.0,
+                5.0,
+                10.0,
+                20.0,
+                50.0,
+                100.0,
+                200.0
+              ],
+              "tvar_levels": [
+                0.99
+              ]
+            }
+          },
+          "tolerance_profile": {
+            "$ref": "#/components/schemas/ToleranceProfileDTO",
+            "default": {
+              "absolute_currency_tolerance": 1e-06,
+              "relative_tolerance": 1e-12
+            }
+          },
+          "trial_count": {
+            "maximum": 10000,
+            "minimum": 1,
+            "title": "Trial Count",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "simulation_id",
+          "trial_count",
+          "catalogue_source_mode",
+          "catalogue_version",
+          "source_version",
+          "simulation_seed"
+        ],
+        "title": "SimulationHeaderDTO",
+        "type": "object"
+      },
+      "SourceOccurrenceDTO": {
+        "additionalProperties": false,
+        "properties": {
+          "annual_trial_id": {
+            "minimum": 1,
+            "title": "Annual Trial Id",
+            "type": "integer"
+          },
+          "event_id": {
+            "title": "Event Id",
+            "type": "string"
+          },
+          "event_sequence": {
+            "minimum": 1,
+            "title": "Event Sequence",
+            "type": "integer"
+          },
+          "event_time": {
+            "minimum": 0,
+            "title": "Event Time",
+            "type": "number"
+          },
+          "inuring_covers": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/InuringCoverDTO"
+            },
+            "title": "Inuring Covers",
+            "type": "array"
+          },
+          "loss_basis": {
+            "$ref": "#/components/schemas/LossBasisDTO"
+          },
+          "peril": {
+            "title": "Peril",
+            "type": "string"
+          },
+          "region": {
+            "title": "Region",
+            "type": "string"
+          },
+          "source_reference": {
+            "title": "Source Reference",
+            "type": "string"
+          },
+          "trace_reference": {
+            "title": "Trace Reference",
+            "type": "string"
+          }
+        },
+        "required": [
+          "annual_trial_id",
+          "event_id",
+          "event_time",
+          "event_sequence",
+          "peril",
+          "region",
+          "source_reference",
+          "trace_reference",
+          "loss_basis"
+        ],
+        "title": "SourceOccurrenceDTO",
+        "type": "object"
+      },
+      "TailConfigurationDTO": {
+        "additionalProperties": false,
+        "properties": {
+          "probability_levels": {
+            "default": [
+              0.95,
+              0.99,
+              0.995
+            ],
+            "items": {
+              "maximum": 1,
+              "minimum": 0,
+              "type": "number"
+            },
+            "title": "Probability Levels",
+            "type": "array"
+          },
+          "return_periods": {
+            "default": [
+              2.0,
+              5.0,
+              10.0,
+              20.0,
+              50.0,
+              100.0,
+              200.0
+            ],
+            "items": {
+              "exclusiveMinimum": 0,
+              "type": "number"
+            },
+            "title": "Return Periods",
+            "type": "array"
+          },
+          "tvar_levels": {
+            "default": [
+              0.99
+            ],
+            "items": {
+              "maximum": 1,
+              "minimum": 0,
+              "type": "number"
+            },
+            "title": "Tvar Levels",
+            "type": "array"
+          }
+        },
+        "title": "TailConfigurationDTO",
+        "type": "object"
+      },
+      "ToleranceProfileDTO": {
+        "additionalProperties": false,
+        "properties": {
+          "absolute_currency_tolerance": {
+            "const": 1e-06,
+            "default": 1e-06,
+            "title": "Absolute Currency Tolerance",
+            "type": "number"
+          },
+          "relative_tolerance": {
+            "const": 1e-12,
+            "default": 1e-12,
+            "title": "Relative Tolerance",
+            "type": "number"
+          }
+        },
+        "title": "ToleranceProfileDTO",
+        "type": "object"
+      },
+      "TreatyTermsDTO": {
+        "additionalProperties": false,
+        "properties": {
+          "layer_terms": {
+            "items": {
+              "$ref": "#/components/schemas/LayerTermsDTO"
+            },
+            "title": "Layer Terms",
+            "type": "array"
+          },
+          "program_id": {
+            "title": "Program Id",
+            "type": "string"
+          },
+          "rule_reference": {
+            "title": "Rule Reference",
+            "type": "string"
+          },
+          "source_reference": {
+            "title": "Source Reference",
+            "type": "string"
+          }
+        },
+        "required": [
+          "program_id",
+          "layer_terms",
+          "source_reference",
+          "rule_reference"
+        ],
+        "title": "TreatyTermsDTO",
+        "type": "object"
+      }
+    }
+  },
+  "info": {
+    "description": "Strict CT6 transport over the frozen CT2--CT5 engines.",
+    "title": "EdInsured Catastrophe Treaty Learning Lab API",
+    "version": "ct6.0.0"
+  },
+  "openapi": "3.1.0",
+  "paths": {
+    "/": {
+      "get": {
+        "operationId": "root__get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "title": "Response Root  Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Root",
+        "tags": [
+          "service"
+        ]
+      }
+    },
+    "/api/v1/capabilities": {
+      "get": {
+        "operationId": "capabilities_api_v1_capabilities_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Capabilities Api V1 Capabilities Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Capabilities",
+        "tags": [
+          "contract"
+        ]
+      }
+    },
+    "/api/v1/runs/catalogue": {
+      "post": {
+        "operationId": "catalogue_api_v1_runs_catalogue_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CatalogueRunRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CT6SuccessResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CT6ProblemResponse"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CT6ProblemResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CT6ProblemResponse"
+                }
+              }
+            },
+            "description": "Request Entity Too Large"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CT6ProblemResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CT6ProblemResponse"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          }
+        },
+        "summary": "Catalogue",
+        "tags": [
+          "runs"
+        ]
+      }
+    },
+    "/api/v1/runs/hours-clause": {
+      "post": {
+        "operationId": "hours_clause_api_v1_runs_hours_clause_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/HoursRunRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CT6SuccessResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CT6ProblemResponse"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CT6ProblemResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CT6ProblemResponse"
+                }
+              }
+            },
+            "description": "Request Entity Too Large"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CT6ProblemResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CT6ProblemResponse"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          }
+        },
+        "summary": "Hours Clause",
+        "tags": [
+          "runs"
+        ]
+      }
+    },
+    "/health/live": {
+      "get": {
+        "operationId": "live_health_live_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "title": "Response Live Health Live Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Live",
+        "tags": [
+          "health"
+        ]
+      }
+    },
+    "/health/ready": {
+      "get": {
+        "operationId": "ready_health_ready_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CT6ProblemResponse"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "summary": "Ready",
+        "tags": [
+          "health"
+        ]
+      }
+    }
+  }
+}
