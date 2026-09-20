@@ -29,4 +29,4 @@ if (violations.length) {
   throw new Error(`CT7 source-boundary violations:\n${violations.join("\n")}`);
 }
 
-console.log("CT7 checkpoint 2 source boundaries: PASS");
+console.log("CT7 source boundaries: PASS");

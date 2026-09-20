@@ -2,6 +2,7 @@ import { Navigate, Route, Routes } from "react-router-dom";
 
 import { AppShell } from "../components/AppShell";
 import { FoundationPage } from "../components/FoundationPage";
+import { ExploreTreatyPage } from "../features/explore/ExploreTreatyPage";
 import { HomePage } from "../features/home/HomePage";
 
 const routeContent = {
@@ -9,11 +10,6 @@ const routeContent = {
     eyebrow: "Guided Lab",
     title: "Learn one treaty mechanism at a time",
     description: "Controlled experiments will connect each input change to CT6 evidence and a neutral takeaway.",
-  },
-  explore: {
-    eyebrow: "Explore Treaty",
-    title: "Build a catalogue-mode treaty scenario",
-    description: "The next checkpoint will add strict request builders for loss stages, program terms and annual capacity.",
   },
   hours: {
     eyebrow: "Hours-Clause Lab",
@@ -38,7 +34,7 @@ export function App() {
       <Route element={<AppShell />}>
         <Route index element={<HomePage />} />
         <Route path="guided" element={<FoundationPage {...routeContent.guided} />} />
-        <Route path="explore" element={<FoundationPage {...routeContent.explore} />} />
+        <Route path="explore" element={<ExploreTreatyPage />} />
         <Route path="hours-clause" element={<FoundationPage {...routeContent.hours} />} />
         <Route path="compare" element={<FoundationPage {...routeContent.compare} />} />
         <Route path="audit" element={<FoundationPage {...routeContent.audit} />} />
