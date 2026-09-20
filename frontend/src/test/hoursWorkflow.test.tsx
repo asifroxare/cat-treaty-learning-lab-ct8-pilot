@@ -51,7 +51,7 @@ describe("Hours-Clause Lab workflow", () => {
     await user.clear(screen.getByRole("textbox", { name: "Hours duration" }));
     await user.type(screen.getByRole("textbox", { name: "Hours duration" }), "48");
     await user.click(screen.getByRole("button", { name: "Generate and elect occurrence" }));
-    expect(await screen.findByRole("heading", { name: "Contract blocked" })).toBeVisible();
+    expect(await screen.findByRole("heading", { name: "The contract blocks this run" })).toBeVisible();
     expect(screen.getByRole("heading", { name: "Previous result — inputs changed" })).toBeVisible();
     expect(screen.getByText("contract blocked", { selector: "strong" })).toBeVisible();
   });

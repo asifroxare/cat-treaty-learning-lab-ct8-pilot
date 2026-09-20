@@ -20,6 +20,18 @@ function visit(directory) {
     if (/\beval\s*\(|dangerouslySetInnerHTML/.test(source)) {
       violations.push(`${name}: dynamic/raw HTML execution is forbidden`);
     }
+    if (/\b(localStorage|sessionStorage|indexedDB|document\.cookie)\b/.test(source)) {
+      violations.push(`${name}: browser persistence is forbidden in CT7 v1`);
+    }
+    if (/\bconsole\.(log|debug|info|warn|error)\s*\(/.test(source)) {
+      violations.push(`${name}: application source must not log request or loss data`);
+    }
+    if (!name.startsWith("api/") && /\bfetch\s*\(/.test(source)) {
+      violations.push(`${name}: direct transport is confined to src/api`);
+    }
+    if (/\bnew\s+Function\s*\(|\bimport\s*\(\s*[^'\"]/.test(source)) {
+      violations.push(`${name}: dynamic code loading is forbidden`);
+    }
     if (/^(api|scenarios)\//.test(name) && source.includes("visualization/geometry")) {
       violations.push(`${name}: API and scenario modules cannot import presentation geometry`);
     }

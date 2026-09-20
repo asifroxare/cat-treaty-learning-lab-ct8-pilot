@@ -2,6 +2,7 @@ import type { ChangeEvent, ReactNode } from "react";
 
 import type { CatalogueFormValues } from "./catalogueForm";
 import { CatalogueResults } from "../results/CatalogueResults";
+import { RunErrorPanel } from "../../components/RunErrorPanel";
 import { useCatalogueRun } from "./useCatalogueRun";
 import "./ExploreTreatyPage.css";
 
@@ -126,15 +127,7 @@ export function ExploreTreatyPage() {
           <p>The browser only checks request completeness and shape. CT6 remains the authoritative treaty validator.</p>
         </section>
       )}
-      {run.problem && (
-        <section className="run-message run-message--error" aria-labelledby="problem-title">
-          <h2 id="problem-title">{run.problem.title}</h2>
-          <p>{run.problem.detail}</p>
-          <p><strong>Code:</strong> {run.problem.code} · <strong>Request:</strong> {run.problem.request_id}</p>
-        </section>
-      )}
-      {run.executionState === "offline" && <section className="run-message run-message--error"><h2>CT6 is unavailable</h2><p>Check the API connection and retry. No fallback result was created.</p></section>}
-      {run.executionState === "server_error" && !run.problem && <section className="run-message run-message--error"><h2>The run could not be completed</h2><p>Retry when the CT6 service is ready. No partial response is displayed.</p></section>}
+      {(run.executionState !== "schema_error" || Object.keys(run.errors).length === 0) && <RunErrorPanel state={run.executionState} problem={run.problem} />}
       {run.priorSuccess && (
         <>
           <section className={`run-message ${run.freshness === "stale" ? "run-message--stale" : "run-message--success"}`} aria-labelledby="result-status-title">

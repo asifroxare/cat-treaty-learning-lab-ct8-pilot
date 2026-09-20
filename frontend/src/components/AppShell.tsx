@@ -14,6 +14,7 @@ const navigation = [
 export function AppShell() {
   return (
     <div className="app-shell">
+      <a className="skip-link" href="#main-content">Skip to main content</a>
       <header className="site-header">
         <div className="brand-lockup">
           <span className="brand-mark" aria-hidden="true">E</span>
@@ -41,7 +42,7 @@ export function AppShell() {
         ))}
       </nav>
 
-      <main id="main-content" className="main-content">
+      <main id="main-content" className="main-content" tabIndex={-1}>
         <Outlet />
       </main>
 

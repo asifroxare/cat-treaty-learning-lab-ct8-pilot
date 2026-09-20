@@ -78,7 +78,7 @@ describe("Explore Treaty workflow", () => {
     await user.type(screen.getByRole("textbox", { name: "Peril" }), "storm");
     await user.click(screen.getByRole("button", { name: "Run treaty scenario" }));
 
-    expect(await screen.findByRole("heading", { name: "Treaty terms invalid" })).toBeVisible();
+    expect(await screen.findByRole("heading", { name: "The treaty terms are not valid" })).toBeVisible();
     expect(screen.getByRole("heading", { name: "Previous result — inputs changed" })).toBeVisible();
     expect(screen.getByText("domain error", { selector: "strong" })).toBeVisible();
     expect(screen.getByText(/request-old/)).toBeVisible();

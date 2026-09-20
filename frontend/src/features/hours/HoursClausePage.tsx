@@ -1,6 +1,7 @@
 import type { ChangeEvent, ReactNode } from "react";
 
 import type { HoursFormValues } from "./hoursForm";
+import { RunErrorPanel } from "../../components/RunErrorPanel";
 import { HoursClauseResults } from "./HoursClauseResults";
 import { useHoursRun } from "./useHoursRun";
 import "../explore/ExploreTreatyPage.css";
@@ -50,8 +51,7 @@ export function HoursClausePage() {
       </form>
 
       {run.executionState === "schema_error" && Object.keys(run.errors).length > 0 && <section className="run-message run-message--error"><h2>Correct the highlighted scenario fields</h2><p>CT6 remains the authoritative contractual validator.</p></section>}
-      {run.problem && <section className="run-message run-message--error"><h2>{run.problem.title}</h2><p>{run.problem.detail}</p><p><strong>Code:</strong> {run.problem.code} · <strong>Request:</strong> {run.problem.request_id}</p>{run.problem.errors.length > 0 && <ul>{run.problem.errors.map((item) => <li key={`${item.path}-${item.code}`}>{item.message} <small>{item.rule_reference}</small></li>)}</ul>}</section>}
-      {run.executionState === "offline" && <section className="run-message run-message--error"><h2>CT6 is unavailable</h2><p>No fallback occurrence or recovery was created.</p></section>}
+      {Object.keys(run.errors).length === 0 && <RunErrorPanel state={run.executionState} problem={run.problem} />}
       {run.priorSuccess && <><section className={`run-message ${run.freshness === "stale" ? "run-message--stale" : "run-message--success"}`}><h2>{run.freshness === "stale" ? "Previous result — inputs changed" : "Authoritative hours-clause run completed"}</h2><p>Request ID: <code>{run.priorSuccess.requestId}</code></p></section><HoursClauseResults data={run.priorSuccess.data} freshness={run.freshness} /></>}
     </section>
   );
