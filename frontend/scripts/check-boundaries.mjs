@@ -12,8 +12,9 @@ function visit(directory) {
       visit(path);
       continue;
     }
-    if (![".ts", ".tsx"].includes(extname(path)) || path.includes("/test/")) continue;
+    if (![".ts", ".tsx"].includes(extname(path))) continue;
     const name = relative(sourceRoot, path).replaceAll("\\", "/");
+    if (name.startsWith("test/")) continue;
     const source = readFileSync(path, "utf8");
     if (!name.startsWith("api/") && source.includes("api/generated/ct6")) {
       violations.push(`${name}: generated CT6 transport types may only be imported inside src/api`);

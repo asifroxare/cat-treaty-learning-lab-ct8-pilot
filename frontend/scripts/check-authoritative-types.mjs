@@ -83,7 +83,10 @@ function scan(rootNames, options, fixture = false) {
 const configPath = join(root, "tsconfig.app.json");
 const configFile = ts.readConfigFile(configPath, ts.sys.readFile);
 const parsed = ts.parseJsonConfigFileContent(configFile.config, ts.sys, root);
-const production = parsed.fileNames.filter((path) => !path.includes("/test/") && !path.includes("/api/generated/"));
+const production = parsed.fileNames.filter((path) => {
+  const normalized = path.replaceAll("\\", "/");
+  return !normalized.includes("/test/") && !normalized.includes("/api/generated/");
+});
 const productionViolations = scan(production, parsed.options);
 
 const fixtureRoot = join(root, "scripts", "fixtures");
