@@ -124,7 +124,19 @@ def create_app(*, settings: RuntimeSettings | None = None) -> FastAPI:
     async def capabilities() -> dict[str, object]:
         return _capabilities()
 
-    common_errors = {code: {"model": CT6ProblemResponse} for code in (400, 409, 413, 422, 500)}
+    # Python 3.14 changed two stdlib reason phrases. Freeze the CT6 OpenAPI
+    # descriptions so every supported Python version emits one contract.
+    error_descriptions = {
+        400: "Bad Request",
+        409: "Conflict",
+        413: "Request Entity Too Large",
+        422: "Unprocessable Entity",
+        500: "Internal Server Error",
+    }
+    common_errors = {
+        code: {"model": CT6ProblemResponse, "description": description}
+        for code, description in error_descriptions.items()
+    }
 
     @application.post("/api/v1/runs/catalogue", response_model=CT6SuccessResponse, responses=common_errors, tags=["runs"])
     async def catalogue(request: Request):
