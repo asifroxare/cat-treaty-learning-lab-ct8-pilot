@@ -1,8 +1,9 @@
 import { readdirSync } from "node:fs";
 import { extname, join, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 import ts from "typescript";
 
-const root = resolve(new URL("..", import.meta.url).pathname);
+const root = resolve(fileURLToPath(new URL("..", import.meta.url)));
 const arithmetic = new Set([
   ts.SyntaxKind.PlusToken, ts.SyntaxKind.MinusToken, ts.SyntaxKind.AsteriskToken,
   ts.SyntaxKind.SlashToken, ts.SyntaxKind.PercentToken, ts.SyntaxKind.AsteriskAsteriskToken,

@@ -1,7 +1,9 @@
 import { spawn } from "node:child_process";
 import { setTimeout as delay } from "node:timers/promises";
+import { fileURLToPath } from "node:url";
 
-const repository = new URL("../..", import.meta.url).pathname;
+const repository = fileURLToPath(new URL("../..", import.meta.url));
+const frontend = fileURLToPath(new URL("..", import.meta.url));
 const url = "http://127.0.0.1:8765";
 const python = process.env.PYTHON ?? "python";
 const server = spawn(python, ["-m", "uvicorn", "cat_treaty.api:app", "--host", "127.0.0.1", "--port", "8765"], {
@@ -23,7 +25,7 @@ async function ready() {
 function runTests() {
   return new Promise((resolve, reject) => {
     const test = spawn("npm", ["exec", "vitest", "run", "src/test/realApi.test.tsx"], {
-      cwd: new URL("..", import.meta.url).pathname,
+      cwd: frontend,
       env: { ...process.env, VITE_CT7_REAL_API_URL: url }, stdio: "inherit", shell: process.platform === "win32",
     });
     test.on("error", reject);

@@ -1,7 +1,8 @@
 import { readFileSync, readdirSync, statSync } from "node:fs";
 import { extname, join, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 
-const root = resolve(new URL("..", import.meta.url).pathname);
+const root = resolve(fileURLToPath(new URL("..", import.meta.url)));
 const dist = join(root, "dist");
 const files = [];
 function walk(directory) {
