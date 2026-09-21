@@ -25,7 +25,12 @@ function scan(rootNames, options, fixture = false) {
   const program = ts.createProgram(rootNames, { ...options, noEmit: true, skipLibCheck: true });
   const checker = program.getTypeChecker();
   const violations = [];
-  const relevant = (file) => rootNames.includes(file.fileName);
+  const canonicalPath = (path) => {
+    const normalized = resolve(path).replaceAll("\\", "/");
+    return ts.sys.useCaseSensitiveFileNames ? normalized : normalized.toLowerCase();
+  };
+  const rootSet = new Set(rootNames.map(canonicalPath));
+  const relevant = (file) => rootSet.has(canonicalPath(file.fileName));
   const typeName = (node) => checker.typeToString(checker.getTypeAtLocation(node));
   const authoritative = (node) => typeName(node).includes("AuthoritativeNumber");
   const geometry = (node) => /CssPixel|SvgCoordinate|VisualizationExtent|UnitInterval/.test(typeName(node));
