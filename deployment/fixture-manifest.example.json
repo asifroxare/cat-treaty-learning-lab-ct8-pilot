@@ -1,0 +1,18 @@
+{
+  "api_origin": "https://replace-with-approved-api-host.example",
+  "frontend_origin": "https://replace-with-approved-frontend-host.example",
+  "fixtures": [
+    {
+      "route": "catalogue",
+      "request_file": "approved-catalogue.json",
+      "request_sha256": "REPLACE_WITH_INDEPENDENTLY_APPROVED_SHA256",
+      "response_sha256": "REPLACE_WITH_INDEPENDENTLY_APPROVED_SHA256"
+    },
+    {
+      "route": "hours-clause",
+      "request_file": "approved-hours.json",
+      "request_sha256": "REPLACE_WITH_INDEPENDENTLY_APPROVED_SHA256",
+      "response_sha256": "REPLACE_WITH_INDEPENDENTLY_APPROVED_SHA256"
+    }
+  ]
+}

@@ -8,7 +8,6 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-BASELINE = "2a45727b9621a860ee074d6b14172b65fd836ad3"
 
 
 def run(*args):
@@ -22,13 +21,16 @@ def sha(path):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--api-origin", required=True, help="Expected HTTPS API origin embedded in the production build")
+    parser.add_argument("--approved-commit", required=True, help="40-character independently reviewed commit SHA")
     args = parser.parse_args()
+    if not re.fullmatch(r"[0-9a-f]{40}", args.approved_commit):
+        parser.error("--approved-commit must be a 40-character Git SHA")
     origin = args.api_origin.rstrip("/")
     if not re.fullmatch(r"https://[A-Za-z0-9.-]+(?::\d+)?", origin) or "localhost" in origin or "127.0.0.1" in origin:
         parser.error("require an explicit public HTTPS API origin")
     head = run("git", "rev-parse", "HEAD")
-    if head != BASELINE:
-        print(f"Source HEAD differs from CT7 baseline: {head}; require a reviewed CT8 commit")
+    if head != args.approved_commit:
+        raise RuntimeError(f"source HEAD {head} differs from reviewed commit {args.approved_commit}")
     if run("git", "status", "--porcelain"):
         raise RuntimeError("working tree must be clean for a release build")
     dist = ROOT / "frontend" / "dist"

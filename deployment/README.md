@@ -25,3 +25,12 @@ process-isolated computation/cancellation, ingress sizing and concurrency/rate
 limits, trusted-host/proxy enforcement, error precedence matrix, reviewed golden
 fixtures, actual CSP/cache/TLS behavior, physical browsers, staging E2E,
 monitoring, rollback drill and independent audit. Each needs separate evidence.
+
+`staging_acceptance.py` verifies HTTPS edge behavior, SPA fallback, CORS and
+independently approved full-response fixture digests. It fails closed when
+manifest origins or digests disagree. It does not test physical browsers or
+worker cancellation. Its explicit topology is split-origin; a same-origin
+provider design needs a separately reviewed variant. The fixture manifest
+example contains placeholders only and cannot pass as release evidence.
+
+`ACCEPTANCE_MATRIX.md` lists the remaining gates with every status OPEN.
