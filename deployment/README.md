@@ -67,3 +67,8 @@ input digests, then hashes the entire successful response excluding only
 `api.request_id`. Its bundled candidate manifest is in `fixtures/ct7` with a
 coverage assessment. These cases do not replace broader CT0–CT7 tests or
 independent actuarial review.
+
+`measure_local.py` begins resource measurement with bounded synthetic loads on
+loopback. It starts and stops its own CT8 API process and samples peak Windows
+working set. The measured 1/10/100-trial cases are far below frozen maximums;
+no public concurrency or timeout threshold follows from this first sample.
