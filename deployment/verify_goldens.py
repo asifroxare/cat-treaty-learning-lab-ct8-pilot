@@ -40,8 +40,13 @@ def main():
     parser.add_argument("--folder", type=Path, required=True, help="CT7 golden candidates folder")
     args = parser.parse_args()
     cases = verify_manifest(args.folder)
+    root = Path(__file__).resolve().parents[1]
+    sys.path.insert(0, str(root))
     from fastapi.testclient import TestClient
-    from cat_treaty.api import create_app
+    import cat_treaty.api as ct8_api
+    if root not in Path(ct8_api.__file__).resolve().parents:
+        raise RuntimeError("API import did not resolve to the CT8 candidate")
+    create_app = ct8_api.create_app
     with TestClient(create_app(), raise_server_exceptions=False) as client:
         for route, raw, expected in cases:
             response = client.post("/api/v1/runs/" + route, content=raw,
