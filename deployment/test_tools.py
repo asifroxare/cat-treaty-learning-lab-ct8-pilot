@@ -1,0 +1,67 @@
+"""Dependency-free tests for deployment evidence integrity."""
+import hashlib
+import json
+import tempfile
+import unittest
+from pathlib import Path
+from unittest.mock import patch
+
+import probe
+import prepare_pages
+import staging_acceptance
+
+
+class DeploymentEvidenceTests(unittest.TestCase):
+    def test_request_id_is_only_allowed_normalization(self):
+        original = {"api": {"request_id": "a", "completion_status": "complete"},
+                    "post_capacity": {"gross_contractual_recovery": 10,
+                                      "reinstatement_premium_payable": 3,
+                                      "net_cash_settlement": 7},
+                    "exclusion_reasons": ["outside_window"]}
+        variant = json.loads(json.dumps(original))
+        variant["api"]["request_id"] = "b"
+        digest = lambda obj: probe.fixture_digest(obj, [("api", "request_id")])
+        self.assertEqual(digest(original), digest(variant))
+        for path, value in (("gross_contractual_recovery", 11),
+                            ("reinstatement_premium_payable", 4),
+                            ("net_cash_settlement", 6)):
+            changed = json.loads(json.dumps(variant))
+            changed["post_capacity"][path] = value
+            self.assertNotEqual(digest(original), digest(changed))
+        variant["exclusion_reasons"][0] = "other"
+        self.assertNotEqual(digest(original), digest(variant))
+
+    def test_staging_rejects_unreviewed_origin_before_network(self):
+        with tempfile.TemporaryDirectory() as folder:
+            path = Path(folder) / "manifest.json"
+            path.write_text(json.dumps({"api_origin": "https://wrong.example",
+                                        "frontend_origin": "https://front.example", "fixtures": []}))
+            with patch("sys.argv", ["staging_acceptance", "--frontend", "https://front.example",
+                                    "--api", "https://api.example", "--manifest", str(path)]):
+                with self.assertRaisesRegex(RuntimeError, "manifest origins"):
+                    staging_acceptance.main()
+
+    def test_pages_policy_is_exact_and_keeps_missing_assets_out_of_spa(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            (root / "index.html").write_text("<html></html>")
+            (root / "assets").mkdir()
+            (root / "assets" / "app.js").write_text("const api='https://api.example';")
+            prepare_pages.prepare(root, "https://api.example")
+            headers = (root / "_headers").read_text()
+            redirects = (root / "_redirects").read_text()
+            self.assertIn("connect-src 'self' https://api.example", headers)
+            self.assertIn("script-src 'self'", headers)
+            self.assertIn("/hours-clause /index.html 200", redirects)
+            self.assertNotIn("/assets/", redirects)
+            with self.assertRaisesRegex(ValueError, "HTTPS"):
+                prepare_pages.prepare(root, "http://localhost:8000")
+
+    def test_request_digest_changes_on_input_mutation(self):
+        raw = b'{"trial_count":1}\n'
+        changed = b'{"trial_count":2}\n'
+        self.assertNotEqual(hashlib.sha256(raw).hexdigest(), hashlib.sha256(changed).hexdigest())
+
+
+if __name__ == "__main__":
+    unittest.main()

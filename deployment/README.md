@@ -34,3 +34,29 @@ provider design needs a separately reviewed variant. The fixture manifest
 example contains placeholders only and cannot pass as release evidence.
 
 `ACCEPTANCE_MATRIX.md` lists the remaining gates with every status OPEN.
+
+`export_ct7_goldens.py` can be run with the exact clean CT7 repository path and
+an empty output directory outside that tree. It refuses any other Git HEAD or
+unclean tree and creates candidate request/response digests from CT7's existing
+fixture constructors. An independent reviewer must approve fixture coverage,
+values, exclusions and hashes before putting them in a staging manifest. The
+script is stored in CT8, not copied into the frozen CT7 repository.
+
+`python -m unittest -v test_tools.py` verifies that request-ID normalization
+does not hide changes to all three settlement components or exclusion reasons,
+and that a staging manifest with the wrong origins is rejected before network
+access. These tests require only the Python standard library; they do not
+replace CT7's 1003-test suite.
+
+`prepare_pages.py` builds an explicit `_headers` and known-route `_redirects`
+policy for a Cloudflare Pages staging candidate. It rejects localhost or a
+missing API origin in the compiled JavaScript. Physical browser and CDN-edge
+verification remain mandatory; see `PLATFORM_CANDIDATE.md`.
+
+`reproduce_ct8.py` is the single Windows checkpoint driver. It uses the
+existing installed CT7 virtual environment without moving or replacing it,
+then runs backend pytest, fresh `npm ci`, the complete frontend `check`, and
+real CT6 API acceptance against the CT8 candidate. It does not deploy or
+write to the CT7 repository. Only use it after extracting a CT8 candidate in a
+separate folder. Its successful result is local reproduction evidence, not
+physical-browser or production-readiness evidence.

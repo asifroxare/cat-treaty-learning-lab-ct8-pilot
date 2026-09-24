@@ -63,6 +63,24 @@ def main():
     denied = dict(preflight, Origin="https://unapproved.example.invalid")
     status, headers, _ = fetch(api + "/api/v1/runs/catalogue", "OPTIONS", headers=denied)
     require(headers.get("Access-Control-Allow-Origin") != denied["Origin"], "foreign origin not CORS-authorized")
+    # Error responses below are small and non-sensitive; keep ingress and CT6
+    # precedence evidence distinct when a future front proxy intercepts requests.
+    cases = (
+        (b'{"bad":', "application/json", 400, "CT6_MALFORMED_JSON"),
+        (b'{}', "text/plain", 400, "CT6_MALFORMED_JSON"),
+        (b'{"api_schema_version":"ct-invalid"}', "application/json", 409, "CT6_VERSION_CONFLICT"),
+    )
+    for raw, media, expected_status, expected_code in cases:
+        status, headers, content = fetch(api + "/api/v1/runs/catalogue", "POST", raw,
+            {"Content-Type": media, "Origin": frontend})
+        body = json.loads(content)
+        require(status == expected_status and body.get("code") == expected_code
+                and body.get("request_id") == headers.get("X-Request-ID"),
+                f"structured CT6 error {expected_code}")
+    status, headers, content = fetch(api + "/api/v1/runs/catalogue", "POST", b'{}',
+        {"Content-Type": "text/plain", "Origin": frontend})
+    require(status == 400 and json.loads(content).get("code") == "CT6_MALFORMED_JSON",
+            "media-type precedence remains frozen")
     for entry in manifest["fixtures"]:
         route = entry["route"]
         if route not in ("catalogue", "hours-clause"):
