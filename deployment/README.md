@@ -60,3 +60,10 @@ real CT6 API acceptance against the CT8 candidate. It does not deploy or
 write to the CT7 repository. Only use it after extracting a CT8 candidate in a
 separate folder. Its successful result is local reproduction evidence, not
 physical-browser or production-readiness evidence.
+
+`verify_goldens.py` compares the two owner-supplied synthetic CT7 fixture
+responses against the CT8 candidate in-process. It checks exact provenance and
+input digests, then hashes the entire successful response excluding only
+`api.request_id`. Its bundled candidate manifest is in `fixtures/ct7` with a
+coverage assessment. These cases do not replace broader CT0–CT7 tests or
+independent actuarial review.

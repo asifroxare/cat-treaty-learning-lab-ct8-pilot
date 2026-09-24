@@ -8,6 +8,7 @@ from unittest.mock import patch
 
 import probe
 import prepare_pages
+import verify_goldens
 import staging_acceptance
 
 
@@ -56,6 +57,20 @@ class DeploymentEvidenceTests(unittest.TestCase):
             self.assertNotIn("/assets/", redirects)
             with self.assertRaisesRegex(ValueError, "HTTPS"):
                 prepare_pages.prepare(root, "http://localhost:8000")
+
+    def test_manifest_rejects_tampered_request(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            (root / "approved-catalogue.json").write_bytes(b'{}')
+            (root / "approved-hours-clause.json").write_bytes(b'{}')
+            entries = [{"route": route, "request_file": f"approved-{route}.json",
+                        "request_sha256": "0" * 64, "response_sha256": "1" * 64}
+                       for route in ("catalogue", "hours-clause")]
+            (root / "baseline-candidates.json").write_text(json.dumps({
+                "source_commit": verify_goldens.BASELINE,
+                "normalization": ["api.request_id"], "fixtures": entries}))
+            with self.assertRaisesRegex(ValueError, "bytes do not match"):
+                verify_goldens.verify_manifest(root)
 
     def test_request_digest_changes_on_input_mutation(self):
         raw = b'{"trial_count":1}\n'

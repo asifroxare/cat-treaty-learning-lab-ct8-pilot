@@ -1,0 +1,20 @@
+{
+  "source_commit": "2a45727b9621a860ee074d6b14172b65fd836ad3",
+  "normalization": [
+    "api.request_id"
+  ],
+  "fixtures": [
+    {
+      "route": "catalogue",
+      "request_file": "approved-catalogue.json",
+      "request_sha256": "ea023f8cab089603938321baa243e65b86c737a852b4b4de699b97754925cdb0",
+      "response_sha256": "0c3cbf92fdca51fd02bc49df22f88831d7f9c66910e3370d144ba48842771244"
+    },
+    {
+      "route": "hours-clause",
+      "request_file": "approved-hours-clause.json",
+      "request_sha256": "8cace31c6da8cba4bfa7ad3ca8db71f28701a68e2007b007f13f6ffddfc2d49a",
+      "response_sha256": "adc838c58732370c13f9ba557a3001b970e5756b0cdd06c71524baf2ce6f4e5f"
+    }
+  ]
+}
