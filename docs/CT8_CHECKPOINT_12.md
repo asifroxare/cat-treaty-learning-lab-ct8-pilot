@@ -18,3 +18,8 @@ The probe's sampling can miss very short memory spikes; it is not a hard OS
 memory limit. The 128 MiB cap and 30-second deadline stay unapproved, as do
 all public ingress, multiworker and staging controls. Frozen actuarial code
 and React remain unchanged.
+
+First owner Windows attempt stopped at 1,000 trials before computation:
+the probe directly validated raw JSON against strict tuple types. The API's
+`_normalize_json_value()` is required first. This probe-only defect is fixed
+in the next ZIP; the failed attempt supplies no size or capacity evidence.

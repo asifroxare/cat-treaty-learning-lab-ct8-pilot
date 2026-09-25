@@ -4,6 +4,7 @@ import pickle
 import sys
 
 from measure_local import payload
+from cat_treaty.api import _normalize_json_value
 from cat_treaty.ct6_models import CatalogueRunRequest
 from cat_treaty.ct6_orchestration import run_catalogue
 
@@ -13,7 +14,8 @@ def main():
     raw = payload(count, sample_cap=5000, detail="full")
     if len(raw) > 6 * 1024 * 1024:
         raise ValueError("local synthetic body exceeded 6 MiB")
-    request = CatalogueRunRequest.model_validate_json(raw)
+    request = CatalogueRunRequest.model_validate(
+        _normalize_json_value(CatalogueRunRequest, json.loads(raw)))
     result = run_catalogue(request)
     encoded = pickle.dumps(("ok", result), protocol=5)
     print(json.dumps({"trials": count, "request_bytes": len(raw),

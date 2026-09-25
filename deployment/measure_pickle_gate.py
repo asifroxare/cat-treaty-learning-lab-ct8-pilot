@@ -50,7 +50,7 @@ def sample(python: Path, count: int):
             time.sleep(0.05)
         stdout, stderr = process.communicate(timeout=5)
         if process.returncode:
-            raise RuntimeError(f"{count}-trial computation exited {process.returncode}: {stderr[:240]!r}")
+            raise RuntimeError(f"{count}-trial computation exited {process.returncode}: {stderr[-2400:]!r}")
         result = json.loads(stdout)
         if result.get("trials") != count:
             raise RuntimeError("child returned the wrong trial count")
