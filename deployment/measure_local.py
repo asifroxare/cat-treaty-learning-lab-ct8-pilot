@@ -57,6 +57,11 @@ def payload(trials):
         trial["annual_trial_id"] = number
         for occurrence in trial["occurrences"]:
             occurrence["annual_trial_id"] = number
+            # CT6 requires event_id unique across the entire simulation and
+            # identical to its CT2 loss-basis occurrence_id.
+            identifier = f"T{number}-{occurrence['event_id']}"
+            occurrence["event_id"] = identifier
+            occurrence["loss_basis"]["occurrence_id"] = identifier
         request["input"]["trials"].append(trial)
     request["input"]["simulation"]["trial_count"] = trials
     request["response_detail"] = "summary"

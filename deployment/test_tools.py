@@ -9,6 +9,7 @@ from unittest.mock import patch
 import probe
 import prepare_pages
 import verify_goldens
+import measure_local
 import staging_acceptance
 
 
@@ -71,6 +72,16 @@ class DeploymentEvidenceTests(unittest.TestCase):
                 "normalization": ["api.request_id"], "fixtures": entries}))
             with self.assertRaisesRegex(ValueError, "bytes do not match"):
                 verify_goldens.verify_manifest(root)
+
+    def test_synthetic_trials_preserve_ct6_global_event_id_contract(self):
+        for count in (1, 10, 100):
+            request = json.loads(measure_local.payload(count))
+            self.assertEqual(request["input"]["simulation"]["trial_count"], count)
+            ids = [event["event_id"] for trial in request["input"]["trials"]
+                   for event in trial["occurrences"]]
+            self.assertEqual(len(ids), len(set(ids)))
+            self.assertTrue(all(event["event_id"] == event["loss_basis"]["occurrence_id"]
+                for trial in request["input"]["trials"] for event in trial["occurrences"]))
 
     def test_request_digest_changes_on_input_mutation(self):
         raw = b'{"trial_count":1}\n'
