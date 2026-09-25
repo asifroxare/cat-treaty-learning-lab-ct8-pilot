@@ -78,3 +78,8 @@ for the Python virtual-environment launcher's PID. This is not a valid API
 memory measurement. The revised local probe samples the launcher and its
 interpreter descendants, lists sampled PIDs, and rejects an implausibly low
 aggregate. It also terminates the whole process tree when finished.
+
+`isolated_execution.py` is a prototype only. Its small-function tests prove
+process termination after a deadline, but it is not connected to the public
+API. It does not yet preserve CT6 error precedence or bound large result
+transport. Do not describe it as a deployed production guard.

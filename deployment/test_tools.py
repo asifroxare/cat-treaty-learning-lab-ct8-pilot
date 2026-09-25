@@ -10,6 +10,7 @@ import probe
 import prepare_pages
 import verify_goldens
 import measure_local
+import isolated_execution
 import staging_acceptance
 
 
@@ -82,6 +83,14 @@ class DeploymentEvidenceTests(unittest.TestCase):
             self.assertEqual(len(ids), len(set(ids)))
             self.assertTrue(all(event["event_id"] == event["loss_basis"]["occurrence_id"]
                 for trial in request["input"]["trials"] for event in trial["occurrences"]))
+
+    def test_disposable_process_returns_complete_value_or_ends_on_deadline(self):
+        answer = isolated_execution.execute("isolation_fixtures", "square", 7, timeout_seconds=10)
+        self.assertEqual(answer.value, 49)
+        with self.assertRaises(isolated_execution.ExecutionExpired):
+            isolated_execution.execute("isolation_fixtures", "wait_forever", None, timeout_seconds=0.1)
+        with self.assertRaises(isolated_execution.ExecutionFailed):
+            isolated_execution.execute("isolation_fixtures", "crash", None, timeout_seconds=10)
 
     def test_request_digest_changes_on_input_mutation(self):
         raw = b'{"trial_count":1}\n'
