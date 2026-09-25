@@ -46,6 +46,52 @@ def windows_working_set(pid):
         kernel.CloseHandle(handle)
 
 
+
+def windows_process_tree(root_pid):
+    """Enumerate the venv launcher and all live descendants with Tool Help."""
+    if os.name != "nt":
+        return [root_pid]
+    from ctypes import wintypes
+    class Entry(ctypes.Structure):
+        _fields_ = [("dwSize", wintypes.DWORD), ("cntUsage", wintypes.DWORD),
+                   ("th32ProcessID", wintypes.DWORD), ("th32DefaultHeapID", ctypes.c_size_t),
+                   ("th32ModuleID", wintypes.DWORD), ("cntThreads", wintypes.DWORD),
+                   ("th32ParentProcessID", wintypes.DWORD), ("pcPriClassBase", wintypes.LONG),
+                   ("dwFlags", wintypes.DWORD), ("szExeFile", wintypes.WCHAR * 260)]
+    kernel = ctypes.WinDLL("kernel32", use_last_error=True)
+    kernel.CreateToolhelp32Snapshot.argtypes = [wintypes.DWORD, wintypes.DWORD]
+    kernel.CreateToolhelp32Snapshot.restype = wintypes.HANDLE
+    kernel.Process32FirstW.argtypes = [wintypes.HANDLE, ctypes.POINTER(Entry)]
+    kernel.Process32NextW.argtypes = [wintypes.HANDLE, ctypes.POINTER(Entry)]
+    kernel.CloseHandle.argtypes = [wintypes.HANDLE]
+    snapshot = kernel.CreateToolhelp32Snapshot(0x00000002, 0)
+    if snapshot == ctypes.c_void_p(-1).value:
+        raise RuntimeError("could not enumerate API child processes")
+    try:
+        item = Entry()
+        item.dwSize = ctypes.sizeof(Entry)
+        parents = {}
+        if kernel.Process32FirstW(snapshot, ctypes.byref(item)):
+            while True:
+                parents[item.th32ProcessID] = item.th32ParentProcessID
+                if not kernel.Process32NextW(snapshot, ctypes.byref(item)):
+                    break
+        result = {root_pid}
+        while True:
+            descendants = {pid for pid, parent in parents.items() if parent in result}
+            new = descendants - result
+            if not new:
+                break
+            result.update(new)
+        return sorted(result)
+    finally:
+        kernel.CloseHandle(snapshot)
+
+def process_tree_peak(pid):
+    children = windows_process_tree(pid)
+    sizes = [windows_working_set(child) for child in children]
+    return sum(value for value in sizes if value is not None), children
+
 def payload(trials):
     if not 1 <= trials <= 100:
         raise ValueError("trial count must remain within the reviewed local sample cap")
@@ -84,21 +130,28 @@ def send(raw):
 
 def sample(process, count, parallel):
     raw = payload(count)
-    peak = windows_working_set(process.pid) or 0
+    peak, seen_pids = process_tree_peak(process.pid)
     started = time.monotonic()
     with ThreadPoolExecutor(max_workers=parallel) as pool:
         futures = [pool.submit(send, raw) for _ in range(parallel)]
         while any(not future.done() for future in futures):
-            peak = max(peak, windows_working_set(process.pid) or 0)
+            current, children = process_tree_peak(process.pid)
+            peak = max(peak, current)
+            seen_pids = sorted(set(seen_pids) | set(children))
             if process.poll() is not None:
                 raise RuntimeError("CT8 API process exited during measurement")
             time.sleep(0.05)
         durations = [future.result() for future in futures]
-    peak = max(peak, windows_working_set(process.pid) or 0)
+    current, children = process_tree_peak(process.pid)
+    peak = max(peak, current)
+    seen_pids = sorted(set(seen_pids) | set(children))
+    if os.name == "nt" and peak < 16 * 1048576:
+        raise RuntimeError("API memory sample is implausibly low; process tree measurement invalid")
     return {"trials_per_request": count, "parallel_requests": parallel,
             "request_body_bytes": len(raw), "wall_seconds": round(time.monotonic()-started, 4),
             "response_seconds": durations,
-            "observed_api_process_peak_mib": round(peak / 1048576, 2) if peak else None}
+            "observed_process_tree_peak_mib": round(peak / 1048576, 2) if peak else None,
+            "sampled_process_pids": seen_pids}
 
 
 def main():
@@ -132,7 +185,11 @@ def main():
                           "results": results}, indent=2))
         print("CT8 local bounded measurement: PASS (measurements only; no public capacity threshold established)")
     finally:
-        process.terminate()
+        if os.name == "nt" and process.poll() is None:
+            subprocess.run(["taskkill", "/T", "/F", "/PID", str(process.pid)],
+                           stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=False)
+        elif process.poll() is None:
+            process.terminate()
         try:
             process.wait(timeout=5)
         except subprocess.TimeoutExpired:

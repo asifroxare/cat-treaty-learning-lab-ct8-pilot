@@ -72,3 +72,9 @@ independent actuarial review.
 loopback. It starts and stops its own CT8 API process and samples peak Windows
 working set. The measured 1/10/100-trial cases are far below frozen maximums;
 no public concurrency or timeout threshold follows from this first sample.
+
+Windows memory note: the first successful timing run produced a flat 4.08 MiB
+for the Python virtual-environment launcher's PID. This is not a valid API
+memory measurement. The revised local probe samples the launcher and its
+interpreter descendants, lists sampled PIDs, and rejects an implausibly low
+aggregate. It also terminates the whole process tree when finished.
