@@ -25,6 +25,9 @@ class RuntimeSettings:
     log_level: str = "info"
     cors_origins: tuple[str, ...] = ()
     cors_allow_credentials: bool = False
+    isolated_runs: bool = False
+    isolation_deadline_seconds: int = 30
+    isolation_max_concurrency: int = 1
 
     def __post_init__(self) -> None:
         if not self.host.strip():
@@ -35,6 +38,10 @@ class RuntimeSettings:
             raise ValueError("unsupported log level")
         if any(not origin.strip() for origin in self.cors_origins):
             raise ValueError("CORS origins must be non-empty")
+        if not 1 <= self.isolation_deadline_seconds <= 300:
+            raise ValueError("CT8 isolation deadline must be 1..300 seconds")
+        if not 1 <= self.isolation_max_concurrency <= 4:
+            raise ValueError("CT8 isolation concurrency must be 1..4 per API worker")
         if "*" in self.cors_origins:
             raise ValueError("wildcard CORS is not permitted by the CT6 production contract")
 
@@ -47,10 +54,18 @@ class RuntimeSettings:
             port = int(raw_port)
         except ValueError as error:
             raise ValueError("PORT must be an integer") from error
+        try:
+            deadline = int(os.getenv("CT8_ISOLATION_DEADLINE_SECONDS", "30"))
+            concurrency = int(os.getenv("CT8_ISOLATION_MAX_CONCURRENCY", "1"))
+        except ValueError as error:
+            raise ValueError("CT8 isolation settings must be integers") from error
         return cls(
             host=os.getenv("CT6_HOST", "0.0.0.0"),
             port=port,
             log_level=os.getenv("CT6_LOG_LEVEL", "info").lower(),
             cors_origins=origins,
             cors_allow_credentials=_boolean("CT6_CORS_ALLOW_CREDENTIALS", False),
+            isolated_runs=_boolean("CT8_ISOLATED_RUNS", False),
+            isolation_deadline_seconds=deadline,
+            isolation_max_concurrency=concurrency,
         )

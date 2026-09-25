@@ -2,8 +2,10 @@
 
 from __future__ import annotations
 
+import asyncio
 import json
 import re
+import threading
 import types
 from collections.abc import Callable
 from enum import Enum
@@ -33,6 +35,7 @@ from cat_treaty.ct6_responses import project_catalogue_success, project_hours_su
 from cat_treaty.models import CapacityBasis, SettlementMode
 from cat_treaty.simulation import CT4PreflightError
 from cat_treaty.runtime import RuntimeSettings
+from cat_treaty.ct8_executor import CT8ExecutionFailure, run_isolated
 
 MAX_REQUEST_BYTES = 25 * 1024 * 1024
 MAX_CATALOGUE_TRIALS = 10_000
@@ -56,6 +59,22 @@ _MESSAGES = {
 
 def create_app(*, settings: RuntimeSettings | None = None) -> FastAPI:
     runtime = settings or RuntimeSettings.from_environment()
+    active_slots = threading.BoundedSemaphore(runtime.isolation_max_concurrency)
+
+    async def execute_run(mode: str, body):
+        if not runtime.isolated_runs:
+            return run_catalogue(body) if mode == "catalogue" else run_hours_clause(body)
+
+        def bounded_run():
+            if not active_slots.acquire(blocking=False):
+                raise CT8ExecutionFailure("isolated execution capacity busy")
+            try:
+                return run_isolated(mode, body, deadline_seconds=runtime.isolation_deadline_seconds)
+            finally:
+                active_slots.release()
+
+        return await asyncio.to_thread(bounded_run)
+
     application = FastAPI(
         title="EdInsured Catastrophe Treaty Learning Lab API",
         version=CT6_API_VERSION,
@@ -149,7 +168,7 @@ def create_app(*, settings: RuntimeSettings | None = None) -> FastAPI:
         if body.response_detail is ResponseDetail.FULL and _catalogue_occurrence_count(body) > MAX_FULL_DETAIL_ROWS:
             return _problem(request, 413, "CT6_REQUEST_TOO_LARGE")
         try:
-            result = run_catalogue(body)
+            result = await execute_run("catalogue", body)
             return project_catalogue_success(result, request_id=request.state.request_id)
         except CT4PreflightError:
             return _problem(request, 422, "CT6_CONTRACT_BLOCKED", errors=_contract_errors())
@@ -167,7 +186,7 @@ def create_app(*, settings: RuntimeSettings | None = None) -> FastAPI:
         if isinstance(body, JSONResponse):
             return body
         try:
-            result = run_hours_clause(body)
+            result = await execute_run("hours-clause", body)
             return project_hours_success(result, request_id=request.state.request_id)
         except CT6HoursContractBlockedError:
             return _problem(request, 422, "CT6_CONTRACT_BLOCKED", errors=_contract_errors())
