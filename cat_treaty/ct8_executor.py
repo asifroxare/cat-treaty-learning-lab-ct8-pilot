@@ -31,11 +31,19 @@ class CT8ExecutionFailure(RuntimeError):
 def _watch_parent_or_exit():
     """Make a child exit if its API worker dies without running cleanup."""
     parent = mp.parent_process()
-    if parent is not None:
-        def stop_on_parent_exit():
-            parent.join()
-            os._exit(1)
-        threading.Thread(target=stop_on_parent_exit, daemon=True).start()
+    if parent is None:
+        raise CT8ExecutionFailure("isolated child has no parent sentinel")
+
+    def stop_on_parent_exit():
+        parent.join()
+        if os.name == "nt":
+            # The calculation may have a launcher or another subprocess.
+            # The worker's finally block cannot run after abrupt worker exit.
+            subprocess.run(["taskkill", "/T", "/F", "/PID", str(os.getpid())],
+                stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=False)
+        os._exit(1)
+
+    threading.Thread(target=stop_on_parent_exit, daemon=True).start()
 
 
 def _child(sender, mode, request):

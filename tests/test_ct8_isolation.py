@@ -118,3 +118,65 @@ def test_hard_killed_parent_does_not_leave_calculation_child_running(tmp_path):
     assert started.is_file(), "the calculation child must start before the parent dies"
     time.sleep(2.3)
     assert not completed.exists(), "orphan child survived an abrupt worker exit"
+    assert not _pid_is_running(int(started.read_text())), "calculation child remains alive"
+
+
+def _pid_is_running(pid: int) -> bool:
+    import os
+    if os.name == "nt":
+        import ctypes
+        kernel = ctypes.WinDLL("kernel32", use_last_error=True)
+        kernel.OpenProcess.argtypes = [ctypes.c_ulong, ctypes.c_int, ctypes.c_ulong]
+        kernel.OpenProcess.restype = ctypes.c_void_p
+        kernel.WaitForSingleObject.argtypes = [ctypes.c_void_p, ctypes.c_ulong]
+        kernel.WaitForSingleObject.restype = ctypes.c_ulong
+        kernel.CloseHandle.argtypes = [ctypes.c_void_p]
+        handle = kernel.OpenProcess(0x00100000, 0, pid)  # SYNCHRONIZE
+        if not handle:
+            error = ctypes.get_last_error()
+            if error == 87:  # ERROR_INVALID_PARAMETER: PID does not exist
+                return False
+            raise OSError(error, f"cannot inspect calculation PID {pid}")
+        try:
+            return kernel.WaitForSingleObject(handle, 0) == 0x102  # WAIT_TIMEOUT
+        finally:
+            kernel.CloseHandle(handle)
+    from pathlib import Path
+    status = Path(f"/proc/{pid}/stat")
+    if status.exists():
+        return status.read_text().split(") ", 1)[1][0] != "Z"
+    try:
+        os.kill(pid, 0)
+        return True
+    except ProcessLookupError:
+        return False
+
+
+def test_missing_parent_sentinel_fails_closed(monkeypatch):
+    import pytest
+    import cat_treaty.ct8_executor as executor
+    monkeypatch.setattr(executor.mp, "parent_process", lambda: None)
+    with pytest.raises(executor.CT8ExecutionFailure, match="parent sentinel"):
+        executor._watch_parent_or_exit()
+
+
+def test_hard_killed_windows_worker_stops_calculation_descendant(tmp_path):
+    import os
+    import subprocess
+    import sys
+    import time
+    from pathlib import Path
+    import pytest
+    if os.name != "nt":
+        pytest.skip("Windows process-tree termination")
+    started = tmp_path / "orphan-started.txt"
+    completed = tmp_path / "descendant-completed.txt"
+    descendant = tmp_path / "descendant-pid.txt"
+    parent = subprocess.Popen([sys.executable, "-m", "tests.ct8_orphan_parent",
+        str(started), str(completed), str(descendant)], cwd=str(Path(__file__).resolve().parents[1]))
+    assert parent.wait(timeout=15) == 7
+    assert started.is_file() and descendant.is_file()
+    time.sleep(3.4)
+    assert not completed.exists(), "orphan descendant continued work"
+    assert not _pid_is_running(int(started.read_text())), "calculation child remains alive"
+    assert not _pid_is_running(int(descendant.read_text())), "calculation descendant remains alive"

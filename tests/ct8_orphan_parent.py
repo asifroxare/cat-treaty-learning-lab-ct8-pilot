@@ -6,13 +6,15 @@ import threading
 import time
 
 from cat_treaty.ct8_executor import _run_process
-from tests.ct8_child_fixtures import orphan_marker
+from tests.ct8_child_fixtures import orphan_descendant, orphan_marker
 
 
 def main():
-    started, completed = sys.argv[1:]
+    started, completed = sys.argv[1:3]
+    target = orphan_descendant if len(sys.argv) == 4 else orphan_marker
+    args = (started, completed, sys.argv[3]) if len(sys.argv) == 4 else (started, completed)
     thread = threading.Thread(target=_run_process,
-        args=(orphan_marker, (started, completed), 10), daemon=True)
+        args=(target, args, 10), daemon=True)
     thread.start()
     for _ in range(100):
         if Path(started).exists():
