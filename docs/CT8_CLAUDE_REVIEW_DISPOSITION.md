@@ -5,7 +5,7 @@ deployment is not authorized.
 
 | Finding | Disposition |
 | --- | --- |
-| Near-max legal response, 128 MiB IPC cap and 30-second deadline unmeasured | **OPEN — launch blocker.** No parameter justified from 1–100 trial samples. |
+| Near-max legal response, 128 MiB IPC cap and 30-second deadline unmeasured | **OPEN — launch blocker.** Owner's bounded 100–1,000-trial isolation measurements are recorded in `CT8_ISOLATION_SCALING_EVIDENCE.md`; the maxima and pickle size remain unmeasured. |
 | Semaphore is per API worker | **OPEN — launch blocker.** Require a single-worker/one-instance launch gate or cross-process/global cap and verify actual hosting configuration. |
 | No HTTP busy/deadline evidence | Targeted HTTP tests show busy returns sanitized `CT6_INTERNAL_ERROR` without partial result, accepted response equals baseline, and synthetic deadline returns sanitized 500. These are mapping tests, not real child HTTP stress tests. Owner confirmed 7 targeted tests and 1010 backend tests passing on Windows, 25 September. |
 | Abrupt parent death can orphan a child | Child watchdog uses the multiprocessing parent sentinel, fails closed when unavailable, and on Windows attempts to terminate its own process tree. New tests check actual PID termination and a spawned Windows descendant. New tests require Windows validation. **OPEN.** |
