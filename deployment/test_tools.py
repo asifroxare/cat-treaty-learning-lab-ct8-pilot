@@ -10,6 +10,7 @@ import probe
 import prepare_pages
 import verify_goldens
 import measure_local
+import measure_pickle_gate
 import isolated_execution
 import staging_acceptance
 
@@ -96,6 +97,12 @@ class DeploymentEvidenceTests(unittest.TestCase):
             measure_local.payload(1001, sample_cap=1000)
         with self.assertRaises(ValueError):
             measure_local.payload(101)
+
+    def test_pickle_probe_rejects_unreviewed_sample_before_starting_child(self):
+        with self.assertRaisesRegex(ValueError, "fixed reviewed samples"):
+            measure_pickle_gate.sample(Path("unused-python"), 10000)
+        self.assertEqual(measure_pickle_gate.MAX_SECONDS, 30)
+        self.assertEqual(measure_pickle_gate.MAX_PEAK_BYTES, 800 * 1024 * 1024)
 
     def test_disposable_process_returns_complete_value_or_ends_on_deadline(self):
         answer = isolated_execution.execute("isolation_fixtures", "square", 7, timeout_seconds=10)

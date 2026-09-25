@@ -93,7 +93,7 @@ def process_tree_peak(pid):
     return sum(value for value in sizes if value is not None), children
 
 def payload(trials, *, sample_cap=100, detail="summary"):
-    if not 1 <= sample_cap <= 1000 or not 1 <= trials <= sample_cap:
+    if not 1 <= sample_cap <= 5000 or not 1 <= trials <= sample_cap:
         raise ValueError("trial count must remain within the reviewed local sample cap")
     if detail not in {"summary", "full"}:
         raise ValueError("unsupported measurement detail")
