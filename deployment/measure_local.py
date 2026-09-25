@@ -92,9 +92,11 @@ def process_tree_peak(pid):
     sizes = [windows_working_set(child) for child in children]
     return sum(value for value in sizes if value is not None), children
 
-def payload(trials):
-    if not 1 <= trials <= 100:
+def payload(trials, *, sample_cap=100, detail="summary"):
+    if not 1 <= sample_cap <= 1000 or not 1 <= trials <= sample_cap:
         raise ValueError("trial count must remain within the reviewed local sample cap")
+    if detail not in {"summary", "full"}:
+        raise ValueError("unsupported measurement detail")
     request = json.loads(FIXTURE.read_text(encoding="utf-8"))
     initial = request["input"]["trials"][0]
     request["input"]["trials"] = []
@@ -110,7 +112,7 @@ def payload(trials):
             occurrence["loss_basis"]["occurrence_id"] = identifier
         request["input"]["trials"].append(trial)
     request["input"]["simulation"]["trial_count"] = trials
-    request["response_detail"] = "summary"
+    request["response_detail"] = detail
     return json.dumps(request, separators=(",", ":")).encode("utf-8")
 
 

@@ -84,6 +84,19 @@ class DeploymentEvidenceTests(unittest.TestCase):
             self.assertTrue(all(event["event_id"] == event["loss_basis"]["occurrence_id"]
                 for trial in request["input"]["trials"] for event in trial["occurrences"]))
 
+    def test_isolated_measurement_remains_bounded_and_preserves_trial_identity(self):
+        for count, detail in ((500, "summary"), (1000, "full")):
+            request = json.loads(measure_local.payload(count, sample_cap=1000, detail=detail))
+            self.assertEqual(request["response_detail"], detail)
+            self.assertEqual(request["input"]["simulation"]["trial_count"], count)
+            ids = [event["event_id"] for trial in request["input"]["trials"]
+                   for event in trial["occurrences"]]
+            self.assertEqual(len(set(ids)), count)
+        with self.assertRaises(ValueError):
+            measure_local.payload(1001, sample_cap=1000)
+        with self.assertRaises(ValueError):
+            measure_local.payload(101)
+
     def test_disposable_process_returns_complete_value_or_ends_on_deadline(self):
         answer = isolated_execution.execute("isolation_fixtures", "square", 7, timeout_seconds=10)
         self.assertEqual(answer.value, 49)
