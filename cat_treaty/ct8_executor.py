@@ -59,9 +59,26 @@ def run_isolated(mode: Literal["catalogue", "hours-clause"], request: object, *,
     """Return a complete engine result or raise a reviewed CT6 error category."""
     if mode not in ("catalogue", "hours-clause") or not 1 <= deadline_seconds <= 300:
         raise ValueError("invalid CT8 execution configuration")
+    payload = _run_process(_child, (mode, request), deadline_seconds)
+    tag, value = pickle.loads(payload)  # trusted bytes from our spawned child only
+    if tag == "ok":
+        return value
+    if tag == "preflight":
+        raise CT4PreflightError(value)
+    if tag == "hours_blocked":
+        raise CT6HoursContractBlockedError(value)
+    if tag == "domain":
+        raise ValueError("isolated domain validation failed")
+    raise CT8ExecutionFailure("isolated computation failed")
+
+
+def _run_process(target, args: tuple, deadline_seconds: float) -> bytes:
+    """One disposable process; internal seam for exact timeout tests."""
+    if deadline_seconds <= 0:
+        raise ValueError("deadline must be positive")
     context = mp.get_context("spawn")
     receiver, sender = context.Pipe(duplex=False)
-    child = context.Process(target=_child, args=(sender, mode, request), daemon=True)
+    child = context.Process(target=target, args=(sender, *args), daemon=True)
     started = time.monotonic()
     try:
         child.start()
@@ -100,16 +117,7 @@ def run_isolated(mode: Literal["catalogue", "hours-clause"], request: object, *,
                             raise CT8ExecutionFailure("child exited without a complete response")
         if state != "bytes":
             raise CT8ExecutionFailure("child pipe closed without a complete response")
-        tag, value = pickle.loads(payload)  # trusted bytes from our spawned child only
-        if tag == "ok":
-            return value
-        if tag == "preflight":
-            raise CT4PreflightError(value)
-        if tag == "hours_blocked":
-            raise CT6HoursContractBlockedError(value)
-        if tag == "domain":
-            raise ValueError("isolated domain validation failed")
-        raise CT8ExecutionFailure("isolated computation failed")
+        return payload
     finally:
         if child.is_alive() and os.name == "nt":
             # Windows virtualenv executables can launch a child interpreter.

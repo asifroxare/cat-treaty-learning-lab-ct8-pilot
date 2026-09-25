@@ -43,3 +43,18 @@ def test_isolation_settings_fail_closed():
         RuntimeSettings(isolated_runs=True, isolation_deadline_seconds=0)
     with pytest.raises(ValueError):
         RuntimeSettings(isolated_runs=True, isolation_max_concurrency=0)
+
+
+def test_expired_child_cannot_finish_or_emit_a_partial_result(tmp_path):
+    import time
+    import pytest
+    from cat_treaty.ct8_executor import CT8ExecutionTimeout, _run_process
+    from tests.ct8_child_fixtures import delayed_marker
+
+    started = tmp_path / "started.txt"
+    completed = tmp_path / "completed.txt"
+    with pytest.raises(CT8ExecutionTimeout):
+        _run_process(delayed_marker, (str(started), str(completed)), deadline_seconds=1.5)
+    assert started.is_file(), "child must actually start before the deadline test"
+    time.sleep(1.2)
+    assert not completed.exists(), "a timed-out child must not keep calculating"

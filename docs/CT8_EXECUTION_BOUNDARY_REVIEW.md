@@ -52,3 +52,9 @@ Windows implementation detail: on forced termination, the parent invokes
 launcher descendant. This still requires a Windows test that records the
 child PID and confirms no interpreter descendant remains after an expired
 request; merely receiving a 500 is insufficient proof of termination.
+
+The next checkpoint adds a direct `_run_process` test with a child that writes
+an early start marker and would write a completion marker after two seconds.
+The parent enforces a 1.5-second deadline, then waits beyond the child's
+scheduled completion and requires the completion marker to remain absent. This
+tests the Windows process-tree termination path, not merely the HTTP 500.
