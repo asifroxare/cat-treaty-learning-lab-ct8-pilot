@@ -28,7 +28,18 @@ class CT8ExecutionFailure(RuntimeError):
     """A child failed without a complete authoritative result."""
 
 
+def _watch_parent_or_exit():
+    """Make a child exit if its API worker dies without running cleanup."""
+    parent = mp.parent_process()
+    if parent is not None:
+        def stop_on_parent_exit():
+            parent.join()
+            os._exit(1)
+        threading.Thread(target=stop_on_parent_exit, daemon=True).start()
+
+
 def _child(sender, mode, request):
+    _watch_parent_or_exit()
     try:
         if mode == "catalogue":
             from cat_treaty.ct6_orchestration import run_catalogue

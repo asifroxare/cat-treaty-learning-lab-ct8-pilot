@@ -58,3 +58,63 @@ def test_expired_child_cannot_finish_or_emit_a_partial_result(tmp_path):
     assert started.is_file(), "child must actually start before the deadline test"
     time.sleep(1.2)
     assert not completed.exists(), "a timed-out child must not keep calculating"
+
+
+def test_opt_in_busy_slot_returns_structured_500_without_changing_accepted_result(monkeypatch):
+    from concurrent.futures import ThreadPoolExecutor
+    import threading
+    import cat_treaty.api as api_module
+
+    entered = threading.Event()
+    release = threading.Event()
+    def held_run(mode, body, *, deadline_seconds):
+        entered.set()
+        assert release.wait(5)
+        return api_module.run_catalogue(body)
+    monkeypatch.setattr(api_module, "run_isolated", held_run)
+    app = create_app(settings=RuntimeSettings(isolated_runs=True, isolation_max_concurrency=1))
+    baseline_status, baseline = _post(create_app(settings=RuntimeSettings()), "catalogue", valid_request())
+    with ThreadPoolExecutor(max_workers=1) as executor:
+        accepted = executor.submit(_post, app, "catalogue", valid_request())
+        assert entered.wait(5), "first request must acquire the only slot"
+        try:
+            busy_status, busy = _post(app, "catalogue", valid_request())
+        finally:
+            release.set()
+        completed_status, completed = accepted.result(timeout=5)
+    assert busy_status == 500 and busy["code"] == "CT6_INTERNAL_ERROR"
+    assert "post_capacity" not in busy
+    assert baseline_status == completed_status == 200
+    assert baseline["api"].pop("request_id")
+    assert completed["api"].pop("request_id")
+    assert completed == baseline
+
+
+def test_opt_in_deadline_failure_returns_structured_500_without_partial_result(monkeypatch):
+    import cat_treaty.api as api_module
+    from cat_treaty.ct8_executor import CT8ExecutionTimeout
+
+    def expired(_mode, _body, *, deadline_seconds):
+        raise CT8ExecutionTimeout("synthetic deadline")
+    monkeypatch.setattr(api_module, "run_isolated", expired)
+    app = create_app(settings=RuntimeSettings(isolated_runs=True))
+    status, body = _post(app, "catalogue", valid_request())
+    assert status == 500 and body["code"] == "CT6_INTERNAL_ERROR"
+    assert "post_capacity" not in body
+    assert "synthetic deadline" not in str(body)
+
+
+def test_hard_killed_parent_does_not_leave_calculation_child_running(tmp_path):
+    from pathlib import Path
+    import subprocess
+    import sys
+    import time
+
+    started = tmp_path / "orphan-started.txt"
+    completed = tmp_path / "orphan-completed.txt"
+    parent = subprocess.Popen([sys.executable, "-m", "tests.ct8_orphan_parent",
+        str(started), str(completed)], cwd=str(Path(__file__).resolve().parents[1]))
+    assert parent.wait(timeout=15) == 7
+    assert started.is_file(), "the calculation child must start before the parent dies"
+    time.sleep(2.3)
+    assert not completed.exists(), "orphan child survived an abrupt worker exit"
