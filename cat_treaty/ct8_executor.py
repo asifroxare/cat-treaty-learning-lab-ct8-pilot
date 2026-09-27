@@ -8,13 +8,13 @@ from __future__ import annotations
 import multiprocessing as mp
 import os
 import pickle
-import subprocess
 from queue import Queue, Empty
 import threading
 import time
 from typing import Literal
 
 from cat_treaty.ct6_hours import CT6HoursContractBlockedError
+from cat_treaty.ct8_process_tree import enter_child_group, stop_own_group, stop_spawned_group
 from cat_treaty.simulation import CT4PreflightError
 
 MAX_RESULT_BYTES = 128 * 1024 * 1024
@@ -36,12 +36,7 @@ def _watch_parent_or_exit():
 
     def stop_on_parent_exit():
         parent.join()
-        if os.name == "nt":
-            # The calculation may have a launcher or another subprocess.
-            # The worker's finally block cannot run after abrupt worker exit.
-            subprocess.run(["taskkill", "/T", "/F", "/PID", str(os.getpid())],
-                stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=False)
-        os._exit(1)
+        stop_own_group()
 
     threading.Thread(target=stop_on_parent_exit, daemon=True).start()
 
@@ -74,6 +69,11 @@ def _child(sender, mode, request):
         sender.close()
 
 
+def _child_entry(target, sender, args):
+    enter_child_group()
+    target(sender, *args)
+
+
 def run_isolated(mode: Literal["catalogue", "hours-clause"], request: object, *, deadline_seconds: float):
     """Return a complete engine result or raise a reviewed CT6 error category."""
     if mode not in ("catalogue", "hours-clause") or not 1 <= deadline_seconds <= 300:
@@ -97,7 +97,7 @@ def _run_process(target, args: tuple, deadline_seconds: float) -> bytes:
         raise ValueError("deadline must be positive")
     context = mp.get_context("spawn")
     receiver, sender = context.Pipe(duplex=False)
-    child = context.Process(target=target, args=(sender, *args), daemon=True)
+    child = context.Process(target=_child_entry, args=(target, sender, args), daemon=True)
     started = time.monotonic()
     try:
         child.start()
@@ -138,12 +138,9 @@ def _run_process(target, args: tuple, deadline_seconds: float) -> bytes:
             raise CT8ExecutionFailure("child pipe closed without a complete response")
         return payload
     finally:
-        if child.is_alive() and os.name == "nt":
-            # Windows virtualenv executables can launch a child interpreter.
-            # Terminate the complete process tree, not just the launcher.
-            subprocess.run(["taskkill", "/T", "/F", "/PID", str(child.pid)],
-                stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=False)
-        elif child.is_alive():
+        if os.name == "posix" or child.is_alive():
+            stop_spawned_group(child.pid)
+        if child.is_alive():
             child.terminate()
         child.join(timeout=2)
         if child.is_alive():

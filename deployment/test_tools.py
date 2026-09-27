@@ -1,6 +1,8 @@
 """Dependency-free tests for deployment evidence integrity."""
 import hashlib
 import json
+import subprocess
+import sys
 import tempfile
 import unittest
 from pathlib import Path
@@ -105,6 +107,24 @@ class DeploymentEvidenceTests(unittest.TestCase):
             measure_pickle_gate.sample(Path("unused-python"), 10000, max_seconds=91)
         self.assertEqual(measure_pickle_gate.MAX_SECONDS, 30)
         self.assertEqual(measure_pickle_gate.MAX_PEAK_BYTES, 800 * 1024 * 1024)
+
+    def test_linux_process_group_prototype_stops_descendants(self):
+        if sys.platform != "linux":
+            self.skipTest("Linux process-group mechanism")
+        result = subprocess.run([sys.executable, str(Path(__file__).with_name("linux_tree_probe.py"))],
+            text=True, capture_output=True, timeout=18)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("deadline: PASS", result.stdout)
+        self.assertIn("abrupt: PASS", result.stdout)
+
+    def test_linux_ct8_executor_stops_descendants(self):
+        if sys.platform != "linux":
+            self.skipTest("Linux CT8 executor lifecycle")
+        result = subprocess.run([sys.executable, str(Path(__file__).with_name("linux_executor_probe.py"))],
+            text=True, capture_output=True, timeout=20)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("executor deadline: PASS", result.stdout)
+        self.assertIn("executor abrupt: PASS", result.stdout)
 
     def test_trial_limit_generator_remains_inside_input_byte_guard(self):
         request = json.loads(measure_local.payload(10000, sample_cap=10000, detail="full"))

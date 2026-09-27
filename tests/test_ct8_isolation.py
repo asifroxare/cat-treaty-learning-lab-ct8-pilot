@@ -142,6 +142,14 @@ def _pid_is_running(pid: int) -> bool:
         finally:
             kernel.CloseHandle(handle)
     from pathlib import Path
+    own_stat = Path("/proc/self/stat")
+    if own_stat.exists() and int(own_stat.read_text().split(" ", 1)[0]) != os.getpid():
+        # Some nested test containers expose /proc from a different PID namespace.
+        try:
+            os.kill(pid, 0)
+            return True
+        except ProcessLookupError:
+            return False
     status = Path(f"/proc/{pid}/stat")
     if status.exists():
         return status.read_text().split(") ", 1)[1][0] != "Z"
@@ -180,3 +188,45 @@ def test_hard_killed_windows_worker_stops_calculation_descendant(tmp_path):
     assert not completed.exists(), "orphan descendant continued work"
     assert not _pid_is_running(int(started.read_text())), "calculation child remains alive"
     assert not _pid_is_running(int(descendant.read_text())), "calculation descendant remains alive"
+
+
+def test_linux_deadline_stops_calculation_descendant(tmp_path):
+    import os
+    import time
+    import pytest
+    if os.name != "posix":
+        pytest.skip("POSIX process-group termination")
+    from cat_treaty.ct8_executor import CT8ExecutionTimeout, _run_process
+    from tests.ct8_child_fixtures import orphan_descendant
+    started = tmp_path / "linux-deadline-started.txt"
+    completed = tmp_path / "linux-deadline-completed.txt"
+    descendant = tmp_path / "linux-deadline-descendant.txt"
+    with pytest.raises(CT8ExecutionTimeout):
+        _run_process(orphan_descendant, (str(started), str(completed), str(descendant)), 1.5)
+    assert started.is_file() and descendant.is_file()
+    time.sleep(3.3)
+    assert not completed.exists()
+    assert not _pid_is_running(int(started.read_text()))
+    assert not _pid_is_running(int(descendant.read_text()))
+
+
+def test_hard_killed_linux_worker_stops_calculation_descendant(tmp_path):
+    import os
+    import subprocess
+    import sys
+    import time
+    from pathlib import Path
+    import pytest
+    if os.name != "posix":
+        pytest.skip("POSIX process-group termination")
+    started = tmp_path / "linux-orphan-started.txt"
+    completed = tmp_path / "linux-orphan-completed.txt"
+    descendant = tmp_path / "linux-orphan-descendant.txt"
+    parent = subprocess.Popen([sys.executable, "-m", "tests.ct8_orphan_parent",
+        str(started), str(completed), str(descendant)], cwd=str(Path(__file__).resolve().parents[1]))
+    assert parent.wait(timeout=15) == 7
+    assert started.is_file() and descendant.is_file()
+    time.sleep(3.3)
+    assert not completed.exists()
+    assert not _pid_is_running(int(started.read_text()))
+    assert not _pid_is_running(int(descendant.read_text()))
