@@ -23,3 +23,8 @@ First owner Windows attempt stopped at 1,000 trials before computation:
 the probe directly validated raw JSON against strict tuple types. The API's
 `_normalize_json_value()` is required first. This probe-only defect is fixed
 in the next ZIP; the failed attempt supplies no size or capacity evidence.
+
+Second owner Windows attempt was interrupted during rapid process-tree
+sampling. The subsequent probe revision reduces sampling to roughly twice
+per second, prints a start and periodic progress line, and labels an
+interruption as `STOPPED`. The child process-tree cleanup remains in `finally`.
