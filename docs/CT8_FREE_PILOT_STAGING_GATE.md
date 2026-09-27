@@ -6,6 +6,8 @@ Render default hostname addressable, subject to direct-origin negative tests
 and independent acceptance. The custom-domain/disabled-Render-subdomain row
 below describes the original topology; it is not evidence that the no-domain
 candidate meets that row.
+`CT8_NO_DOMAIN_EXACT_STAGING_CONFIG.md` gives the one-Worker UI/API candidate;
+it supersedes the split-origin UI and API rows below for that candidate.
 
 **Prepared 27 September 2026. No service, DNS, spending or public URL has
 been created.** This is an execution checklist for a separately authorized

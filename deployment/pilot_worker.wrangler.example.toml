@@ -2,6 +2,13 @@
 # No service, secrets, names, Access policy, or pilot capacity are approved here.
 main = "deployment/pilot_edge_worker.mjs"
 compatibility_date = "2026-09-27"
+name = "edinsured-ct8-cat-pilot"
+
+[assets]
+directory = "./frontend/dist"
+binding = "ASSETS"
+run_worker_first = true
+not_found_handling = "single-page-application"
 
 [[ratelimits]]
 name = "PILOT_RATE_LIMITER"

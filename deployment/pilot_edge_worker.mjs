@@ -4,15 +4,36 @@ const paths = new Map([
   ["/api/pilot/v1/runs/hours-clause", "POST"],
   ["/api/pilot/v1/capabilities", "GET"],
 ]);
+const uiRoutes = new Set(["/", "/guided", "/explore", "/hours-clause", "/compare", "/audit"]);
 
 export default {
   async fetch(request, env) {
     const incoming = new URL(request.url);
     if (!env.PILOT_PUBLIC_HOST || !env.PILOT_ORIGIN_HOST ||
         !env.PILOT_ORIGIN_SECRET || env.PILOT_ORIGIN_SECRET.length < 32 ||
-        !env.PILOT_UI_ORIGIN || incoming.hostname !== env.PILOT_PUBLIC_HOST ||
-        !paths.has(incoming.pathname) || incoming.search) {
+        !env.PILOT_UI_ORIGIN || incoming.hostname !== env.PILOT_PUBLIC_HOST || incoming.search) {
       return new Response("Not found", { status: 404 });
+    }
+    if (!paths.has(incoming.pathname)) {
+      // With Worker-first assets, never let an unknown API path fall back to
+      // the SPA index. Access must protect this entire workers.dev hostname.
+      if (request.method !== "GET" ||
+          (!uiRoutes.has(incoming.pathname) &&
+           !/^\/assets\/[A-Za-z0-9][A-Za-z0-9._-]*\.(?:js|css|svg|png|woff2?)$/.test(incoming.pathname)) ||
+          !env.ASSETS || typeof env.ASSETS.fetch !== "function")
+        return new Response("Not found", { status: 404 });
+      const asset = await env.ASSETS.fetch(request);
+      const headers = new Headers(asset.headers);
+      headers.set("Cache-Control", "no-store");
+      headers.set("X-Content-Type-Options", "nosniff");
+      headers.set("X-Frame-Options", "DENY");
+      headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
+      headers.set("Permissions-Policy", "camera=(), microphone=(), geolocation=()");
+      headers.set("Content-Security-Policy", "default-src 'none'; base-uri 'self'; object-src 'none'; " +
+        "frame-ancestors 'none'; form-action 'self'; script-src 'self'; " +
+        "style-src 'self' 'unsafe-inline'; img-src 'self' data:; " +
+        "font-src 'self'; connect-src 'self'");
+      return new Response(asset.body, { status: asset.status, headers });
     }
     const expected = paths.get(incoming.pathname);
     const cors = {

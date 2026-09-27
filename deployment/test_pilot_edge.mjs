@@ -8,6 +8,7 @@ const env = {
   PILOT_UI_ORIGIN: "https://pilot-ui.example.org",
   PILOT_ORIGIN_SECRET: "an-example-only-secret-longer-than-thirty-two-chars",
   PILOT_RATE_LIMITER: { limit: async () => ({ success: true }) },
+  ASSETS: { fetch: async () => new Response("ui", { status: 200 }) },
 };
 const url = "https://pilot-api.example.org/api/pilot/v1/runs/catalogue";
 test("only explicit pilot paths reach origin; proof is replaced", async () => {
@@ -31,6 +32,22 @@ test("only explicit pilot paths reach origin; proof is replaced", async () => {
     assert.equal(new URL(forwarded.url).hostname, env.PILOT_ORIGIN_HOST);
     assert.equal(forwarded.headers.get("X-CT8-Pilot-Origin"), env.PILOT_ORIGIN_SECRET);
   } finally { globalThis.fetch = original; }
+});
+
+test("same-origin UI uses protected assets; forbidden API paths never fall through", async () => {
+  let assetCalls = 0;
+  const assets = { fetch: async () => { assetCalls++; return new Response("ui", { status: 200 }); } };
+  const server = { ...env, ASSETS: assets };
+  const root = `https://${env.PILOT_PUBLIC_HOST}`;
+  const ui = await pilot.fetch(new Request(`${root}/guided`), server);
+  assert.equal(ui.status, 200);
+  assert.equal(ui.headers.get("X-Content-Type-Options"), "nosniff");
+  assert.ok(ui.headers.get("Content-Security-Policy").includes("connect-src 'self'"));
+  assert.equal((await pilot.fetch(new Request(`${root}/assets/index-Ab_2.css`), server)).status, 200);
+  assert.equal((await pilot.fetch(new Request(`${root}/api/v1/runs/catalogue`), server)).status, 404);
+  assert.equal((await pilot.fetch(new Request(`${root}/api/pilot/v1/runs/other`), server)).status, 404);
+  assert.equal((await pilot.fetch(new Request(`${root}/unknown`), server)).status, 404);
+  assert.equal(assetCalls, 2);
 });
 
 test("calculation binding fails closed without forwarding, while preflight stays available", async () => {
