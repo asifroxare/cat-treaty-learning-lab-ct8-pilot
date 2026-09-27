@@ -101,6 +101,8 @@ class DeploymentEvidenceTests(unittest.TestCase):
     def test_pickle_probe_rejects_unreviewed_sample_before_starting_child(self):
         with self.assertRaisesRegex(ValueError, "fixed reviewed samples"):
             measure_pickle_gate.sample(Path("unused-python"), 10001)
+        with self.assertRaisesRegex(ValueError, "deadline outside"):
+            measure_pickle_gate.sample(Path("unused-python"), 10000, max_seconds=91)
         self.assertEqual(measure_pickle_gate.MAX_SECONDS, 30)
         self.assertEqual(measure_pickle_gate.MAX_PEAK_BYTES, 800 * 1024 * 1024)
 

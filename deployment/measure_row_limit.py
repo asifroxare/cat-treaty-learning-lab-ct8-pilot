@@ -13,7 +13,7 @@ def main():
     args = parser.parse_args()
     python = args.python.resolve(strict=True)
     try:
-        print(json.dumps(sample(python, 10000, scenario="rows25k")), flush=True)
+        print(json.dumps(sample(python, 10000, scenario="rows25k", max_seconds=90)), flush=True)
     except (OSError, ValueError, RuntimeError, KeyboardInterrupt) as error:
         print(f"CT8 row-limit probe: STOPPED ({error})", file=sys.stderr)
         return 1

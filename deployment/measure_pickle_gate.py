@@ -29,11 +29,13 @@ def stop_tree(process):
         process.wait()
 
 
-def sample(python: Path, count: int, *, scenario="one"):
+def sample(python: Path, count: int, *, scenario="one", max_seconds=MAX_SECONDS):
     if count not in (1000, 2500, 5000, 10000):
         raise ValueError("count outside the fixed reviewed samples")
     if scenario not in {"one", "rows25k"} or scenario == "rows25k" and count != 10000:
         raise ValueError("scenario outside the fixed reviewed samples")
+    if max_seconds not in (30, 90):
+        raise ValueError("deadline outside the fixed reviewed samples")
     environment = os.environ.copy()
     environment["PYTHONPATH"] = str(ROOT)
     process = subprocess.Popen([str(python), str(Path(__file__).with_name("measure_pickle_child.py")),
@@ -43,13 +45,13 @@ def sample(python: Path, count: int, *, scenario="one"):
     start = time.monotonic()
     peak = 0
     pids = set()
-    print(f"CT8 local probe: {count} full-detail trials, {scenario} started (30s / 800 MiB safety stops)", flush=True)
+    print(f"CT8 local probe: {count} full-detail trials, {scenario} started ({max_seconds}s / 800 MiB safety stops)", flush=True)
     next_progress = start + 5
     try:
         while process.poll() is None:
             now = time.monotonic()
-            if now >= MAX_SECONDS + start:
-                raise RuntimeError(f"stopped {count} trials at the 30-second local deadline")
+            if now >= max_seconds + start:
+                raise RuntimeError(f"stopped {count} trials at the {max_seconds}-second local deadline")
             if now >= next_progress:
                 print(f"CT8 local probe: {count} trials, {int(now - start)}s elapsed", flush=True)
                 next_progress = now + 5
