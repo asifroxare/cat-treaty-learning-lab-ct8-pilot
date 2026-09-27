@@ -34,6 +34,14 @@ describe("frozen CT6 problem mapping", () => {
     expect(executionStateForProblem(problem("CT6_FUTURE_CODE"))).toBe("server_error");
   });
 
+  it("distinguishes invited-test limits, access and saturation", () => {
+    expect(executionStateForProblem(problem("CT8_PILOT_LIMIT"))).toBe("pilot_limit");
+    expect(executionStateForProblem(problem("CT8_PILOT_AUTH"))).toBe("pilot_access");
+    expect(executionStateForProblem(problem("CT8_PILOT_BUSY"))).toBe("pilot_busy");
+    expect(executionStateForProblem(problem("CT8_PILOT_INPUT"))).toBe("schema_error");
+    expect(executionStateForProblem(problem("CT8_PILOT_CONTRACT"))).toBe("contract_blocked");
+  });
+
   it("marks only an existing successful result stale after edit", () => {
     expect(resultFreshnessAfterEdit(true)).toBe("stale");
     expect(resultFreshnessAfterEdit(false)).toBe("none");

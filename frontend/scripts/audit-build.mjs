@@ -19,5 +19,15 @@ const leaked = textFiles.filter((path) => forbiddenContent.test(readFileSync(pat
 if (forbiddenNames.length || leaked.length) {
   throw new Error(`CT7 production-build audit failed: ${[...forbiddenNames, ...leaked].join(", ")}`);
 }
+if (process.env.VITE_CT8_PILOT_MODE === "true") {
+  const origin = process.env.VITE_CT6_API_BASE_URL ?? "";
+  if (!/^https:\/\/[a-z0-9.-]+$/i.test(origin))
+    throw new Error("CT8 pilot build requires an exact HTTPS API origin");
+  const compiled = textFiles.filter((path) => extname(path) === ".js")
+    .map((path) => readFileSync(path, "utf8")).join("\n");
+  if (!compiled.includes(origin) || !compiled.includes("/api/pilot/v1") ||
+      compiled.includes("localhost:8000"))
+    throw new Error("CT8 pilot build has an unreviewed origin or route");
+}
 const bytes = files.reduce((total, path) => total + statSync(path).size, 0);
 console.log(`CT7 production-build audit: PASS (${files.length} files, ${bytes} bytes, no maps/secrets/local paths)`);

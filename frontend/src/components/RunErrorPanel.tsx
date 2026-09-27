@@ -8,6 +8,9 @@ const publicMessages: Record<Exclude<ExecutionState, "editing" | "submitting" | 
   domain_error: { title: "The treaty terms are not valid", message: "Review the returned rule references. The lab will not invent replacement terms." },
   contract_blocked: { title: "The contract blocks this run", message: "Review the returned election or geometry evidence. No partial recovery is displayed." },
   too_large: { title: "The full response would be too large", message: "Select summary response detail and submit again. The lab never downgrades a request automatically." },
+  pilot_limit: { title: "Outside this invited test's limits", message: "This test release supports a measured subset of scenarios. Reduce the request or use a guided example; no result was calculated." },
+  pilot_access: { title: "Pilot access is required", message: "Your invitation may have expired. Sign in through the test link and try again." },
+  pilot_busy: { title: "Pilot is busy", message: "A test run is already in progress. Wait before submitting again; no result was calculated for this request." },
   server_error: { title: "The CT6 service could not complete the run", message: "Retry later. No internal path, stack trace or partial result is displayed." },
   offline: { title: "The CT6 service is unavailable", message: "Check the API connection and retry. No simulated fallback result was created." },
 };

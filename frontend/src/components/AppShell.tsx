@@ -1,4 +1,7 @@
+import { useEffect, useState } from "react";
 import { NavLink, Outlet } from "react-router-dom";
+import { CT8_PILOT_MODE } from "../api/config";
+import { loadPilotLimits } from "../api/pilotCapabilities";
 
 import "./AppShell.css";
 
@@ -12,6 +15,15 @@ const navigation = [
 ] as const;
 
 export function AppShell() {
+  const [pilotLimits, setPilotLimits] = useState<string | null>(null);
+  useEffect(() => {
+    if (!CT8_PILOT_MODE) return;
+    const controller = new AbortController();
+    void loadPilotLimits(controller.signal).then((limits) => {
+      if (!controller.signal.aborted) setPilotLimits(limits);
+    });
+    return () => controller.abort();
+  }, []);
   return (
     <div className="app-shell">
       <a className="skip-link" href="#main-content">Skip to main content</a>
@@ -28,6 +40,12 @@ export function AppShell() {
           CT6 contract
         </div>
       </header>
+
+      {CT8_PILOT_MODE && <p role="status" className="scope-banner">
+        <strong>Invited test release.</strong> Only measured pilot scenarios are available.
+        {pilotLimits ? ` ${pilotLimits}` : " Limits are unavailable; check access before running a scenario."}
+        {" "}Full CT6 capacity is deferred; the Python backend rejects out-of-scope requests.
+      </p>}
 
       <nav className="primary-nav" aria-label="Primary navigation">
         {navigation.map(([to, label]) => (

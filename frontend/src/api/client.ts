@@ -1,5 +1,5 @@
 import { acceptAuthoritativeResponse, type AuthoritativeSuccessResponse } from "./authoritative";
-import { CT6_API_BASE_URL } from "./config";
+import { CT6_API_BASE_URL, CT8_PILOT_MODE } from "./config";
 import type { CatalogueRunRequest, CT6Problem, HoursRunRequest } from "./contract";
 import { executionStateForProblem, type ExecutionState } from "./runState";
 import type { components } from "./generated/ct6";
@@ -68,9 +68,10 @@ export function createCT6Client(
     let response: Response;
     try {
       response = await transport(`${normalizedBaseUrl}${path}`, {
-        method: "POST",
-        headers,
-        body: JSON.stringify(body),
+      method: "POST",
+      headers,
+      body: JSON.stringify(body),
+      ...(CT8_PILOT_MODE ? { credentials: "include" as const } : {}),
       });
     } catch {
       return { ok: false, state: "offline", problem: null, requestId: null };
@@ -108,7 +109,7 @@ export function createCT6Client(
   }
 
   return {
-    runCatalogue: (request, requestId) => run("/api/v1/runs/catalogue", request, requestId),
-    runHoursClause: (request, requestId) => run("/api/v1/runs/hours-clause", request, requestId),
+    runCatalogue: (request, requestId) => run(`${CT8_PILOT_MODE ? "/api/pilot/v1" : "/api/v1"}/runs/catalogue`, request, requestId),
+    runHoursClause: (request, requestId) => run(`${CT8_PILOT_MODE ? "/api/pilot/v1" : "/api/v1"}/runs/hours-clause`, request, requestId),
   };
 }
