@@ -60,6 +60,14 @@ pilot response; no silent downgrade or partial result. Successful responses
 are projected by frozen CT6 Python code. The edge proxy and backend limits
 both protect against valid testers going directly to the Render origin.
 
+`cat_treaty/pilot_observability.py` emits category-only JSON events via the
+Uvicorn error logger. Where Linux permits, it reads the whole cgroup's memory
+peak/current/limit and API/reaped-child peak RSS; missing metrics stay `null`.
+Operator events omit input, result, email, IP, token and request ID. A process
+killed by OOM may not log a final event: service restart is a failure signal.
+`CT8_FREE_PILOT_STAGING_GATE.md` specifies the stop conditions and the
+information required before choosing numerical pilot limits.
+
 ## Evidence and remaining acceptance
 
 The JWT signature/policy checks and edge route rejection have local tests.

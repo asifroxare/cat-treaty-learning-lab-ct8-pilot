@@ -22,11 +22,13 @@ from cat_treaty.ct6_models import CatalogueRunRequest, HoursRunRequest
 from cat_treaty.ct6_responses import project_catalogue_success, project_hours_success
 from cat_treaty.ct8_executor import CT8ExecutionFailure, CT8ExecutionTimeout, run_isolated
 from cat_treaty.pilot_auth import AccessVerifier, PilotUnauthorized
+from cat_treaty.pilot_observability import record
 from cat_treaty.pilot_policy import PilotLimits, PilotLimitExceeded
 from cat_treaty.simulation import CT4PreflightError
 
 
 def _response(status: int, code: str, request_id: str) -> JSONResponse:
+    record(mode="pilot", outcome=code, include_resource=False)
     titles = {
         "CT8_PILOT_AUTH": "Pilot authentication required",
         "CT8_PILOT_INPUT": "Pilot input invalid",
@@ -118,6 +120,7 @@ def create_pilot_app(*, config: dict[str, str] | None = None, verifier: AccessVe
         }}, headers={"Cache-Control": "no-store"})
 
     async def execute(mode: str, request: Request) -> JSONResponse:
+        began = time.monotonic()
         request_id = str(uuid4())
         if request.headers.get("host") != host:
             return _response(404, "CT8_PILOT_INPUT", request_id)
@@ -170,13 +173,21 @@ def create_pilot_app(*, config: dict[str, str] | None = None, verifier: AccessVe
                 raise
             projected = (project_catalogue_success(result, request_id=request_id)
                          if mode == "catalogue" else project_hours_success(result, request_id=request_id))
-            return JSONResponse(projected.model_dump(mode="json"),
+            response = JSONResponse(projected.model_dump(mode="json"),
                 headers={"X-Request-ID": request_id, "Cache-Control": "no-store"})
+            record(mode=mode, outcome="complete", elapsed_ms=int((time.monotonic() - began) * 1000),
+                request_bytes=len(raw), response_bytes=len(response.body))
+            return response
         except CT8ExecutionFailure:
+            record(mode=mode, outcome="child_failure", elapsed_ms=int((time.monotonic() - began) * 1000))
             return _response(500, "CT8_PILOT_FAILURE", request_id)
         except (CT4PreflightError, CT6HoursContractBlockedError):
             return _response(422, "CT8_PILOT_CONTRACT", request_id)
+        except CT8ExecutionTimeout:
+            record(mode=mode, outcome="deadline", elapsed_ms=int((time.monotonic() - began) * 1000))
+            return _response(500, "CT8_PILOT_FAILURE", request_id)
         except Exception:
+            record(mode=mode, outcome="internal_failure", elapsed_ms=int((time.monotonic() - began) * 1000))
             return _response(500, "CT8_PILOT_FAILURE", request_id)
 
     @app.post("/api/pilot/v1/runs/catalogue", include_in_schema=False)
