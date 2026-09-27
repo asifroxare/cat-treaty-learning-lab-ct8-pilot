@@ -32,6 +32,19 @@ export default {
         !request.headers.get("Cf-Access-Jwt-Assertion")) {
       return new Response("Not authorized", { status: 401, headers: { "Cache-Control": "no-store" } });
     }
+    if (expected === "POST") {
+      // This binding is a location-local admission filter, not a global run
+      // counter. The one-worker Python semaphore remains authoritative.
+      if (!env.PILOT_RATE_LIMITER || typeof env.PILOT_RATE_LIMITER.limit !== "function")
+        return new Response("Pilot unavailable", { status: 503, headers: { "Cache-Control": "no-store" } });
+      try {
+        const admission = await env.PILOT_RATE_LIMITER.limit({ key: "ct8-pilot-calculations" });
+        if (!admission || admission.success !== true)
+          return new Response("Pilot rate limit reached", { status: 429, headers: { "Cache-Control": "no-store" } });
+      } catch {
+        return new Response("Pilot unavailable", { status: 503, headers: { "Cache-Control": "no-store" } });
+      }
+    }
     const destination = new URL(request.url);
     destination.hostname = env.PILOT_ORIGIN_HOST;
     destination.protocol = "https:";

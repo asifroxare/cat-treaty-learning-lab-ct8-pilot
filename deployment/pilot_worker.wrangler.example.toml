@@ -1,0 +1,13 @@
+# REVIEW EXAMPLE ONLY. Use a unique namespace_id in the owner's account.
+# No service, secrets, names, Access policy, or pilot capacity are approved here.
+main = "deployment/pilot_edge_worker.mjs"
+compatibility_date = "2026-09-27"
+
+[[ratelimits]]
+name = "PILOT_RATE_LIMITER"
+namespace_id = "1001"
+
+[ratelimits.simple]
+# Temporary staging ceiling only. Select release limits after host measurement.
+limit = 6
+period = 60

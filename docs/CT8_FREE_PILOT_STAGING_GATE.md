@@ -1,5 +1,12 @@
 # CT8 free pilot — controlled staging gate
 
+**No-domain candidate amendment:** `CT8_NO_DOMAIN_STAGING_DISPOSITION.md`
+documents a separate `workers.dev` Access route that temporarily leaves the
+Render default hostname addressable, subject to direct-origin negative tests
+and independent acceptance. The custom-domain/disabled-Render-subdomain row
+below describes the original topology; it is not evidence that the no-domain
+candidate meets that row.
+
 **Prepared 27 September 2026. No service, DNS, spending or public URL has
 been created.** This is an execution checklist for a separately authorized
 staging exercise, not a deployment instruction or approval. The pilot stays
