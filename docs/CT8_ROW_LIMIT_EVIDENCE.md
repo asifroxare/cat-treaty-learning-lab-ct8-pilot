@@ -26,3 +26,13 @@ workload, transfer and host-resource evidence.
 
 Reference checked 27 September 2026:
 https://developers.cloudflare.com/support/troubleshooting/http-status-codes/cloudflare-5xx-errors/error-524/
+
+The owner next ran the 90-second/observed 800 MiB version. It printed progress
+at 5, 10, 16, 21 and 26 seconds and then reported **STOPPED at the 800 MiB
+local process-tree limit**. This is a sampled sum of peak working sets across
+the process tree, not a measured unique resident set or a hard OS quota. The
+output supplied no final elapsed time, result size or complete memory peak.
+Do not infer the exact instance size required from this stop. The 30-second
+deadline and 800 MiB local ceiling are independently inadequate as evidence
+for serving this legal workload; further blind increases in either threshold
+are not a substitute for a reviewed host capacity and contract decision.
