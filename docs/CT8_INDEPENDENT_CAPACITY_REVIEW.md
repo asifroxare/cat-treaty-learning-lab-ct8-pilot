@@ -4,6 +4,15 @@
 **Deployment:** none. **Actuarial code:** CT0–CT7 remains frozen in Python.
 **Frontend:** CT7 presentation and interaction remain unchanged.
 
+**Later evidence (27 September):** this memo preceded the Linux bounded
+direct-engine run documented in `CT8_LINUX_CAPACITY_EVIDENCE.md`. The legal
+25,000-row one-layer case subsequently completed in 27.529s, with 91,939,829
+pickled bytes and 835,600 KiB worker peak RSS under a 2 GiB OS address-space
+ceiling. A four-layer variant completed in 36.497s, 120,092,827 pickled
+bytes and 1,150,288 KiB worker peak RSS. Statements below that their result
+sizes are unknown describe the earlier Windows-only evidence. Full API,
+high-occurrence summary and hours maxima remain open.
+
 ## Verified evidence and limits
 
 | Evidence | Result | Practical limit |
@@ -17,11 +26,12 @@
 | Legal 10,000-trial/25,000-occurrence full-detail input | 22,705,383 request bytes; stopped at 30s | No authoritative result or completion size. |
 | Same legal input, extended local probe | Stopped at observed 800 MiB process-tree guard, after 26s progress | No authoritative result or final peak. |
 
-The process-tree probe sums sampled Windows working-set values; shared pages
+The Windows process-tree probe sums sampled Windows working-set values; shared pages
 can be double counted, and short peaks can be missed. No single figure above
 is a guaranteed minimum RAM allocation. The 25,000-row fixture is within the
 frozen 25 MiB input and full-detail-row limits. The 100,000-occurrence,
-four-layer and hours-candidate maxima are still unmeasured.
+high-occurrence summary and hours-candidate maxima are still unmeasured;
+the subsequent bounded Linux direct-engine four-layer case is described above.
 
 ## Current architecture candidate
 
@@ -72,7 +82,7 @@ approve the exact release digest, domains and costs as the final step.
 3. Does the 22,705,383-byte, 10,000-trial/25,000-occurrence fixture satisfy
    CT6's schema, domain, input and full-detail-row contracts? What combined
    legal workload dimensions are missing, especially four layers and hours
-   candidate expansion?
+   candidate expansion? Account for the later bounded four-layer result.
 4. How should the child-result 128 MiB cap and execution deadline be tested
    for a complete legal result without making the owner's 16 GB Windows
    computer or the future host unstable? Specify an abort and cleanup check.

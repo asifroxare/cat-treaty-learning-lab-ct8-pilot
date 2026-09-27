@@ -2,6 +2,17 @@
 
 **Status: blocked for public deployment; no plan or purchase selected.**
 
+**Update 27 September:** A bounded Linux *direct-engine* run of the
+25,000-row, 22,705,383-byte legal input completed in 27.529 seconds with
+91,939,829 pickled bytes and 835,600 KiB worker peak RSS under a 2 GiB
+OS address-space limit. See `CT8_LINUX_CAPACITY_EVIDENCE.md`. This resolves
+the missing direct-result size for this one-layer fixture, but does not
+establish full API/host capacity or hours maximum. A subsequent legal
+four-layer variant completed in 36.497s with a 120,092,827-byte pickled
+result and 1,150,288 KiB direct-worker peak RSS under the same 2 GiB
+address-space ceiling. This result is close to the current 128 MiB IPC cap
+and exceeds the default 30-second isolation deadline.
+
 The frozen CT6 transport accepts up to 10,000 trials, 100,000 occurrences,
 25 MiB input and 25,000 full-detail rows. The optional CT8 isolated path has
 a candidate 30-second deadline and a 128 MiB pickled child-result cap.
@@ -16,9 +27,11 @@ Owner Windows measurements establish:
 
 These process-tree figures sum sampled peak working sets, may count shared
 pages more than once, and do not establish the true peak or host capacity.
-The 25,000-row response size and completion time remain unknown. Four-layer
-and hours-clause maxima also remain unmeasured. The default CT8 isolation
-deadline is demonstrably too short for the sampled legal row-limit workload.
+Those Windows stops established no completed Windows result; the bounded
+Linux direct-engine results above now supply the one-layer and four-layer
+sizes and durations for this particular fixture. High-occurrence summary,
+other legal loss mixes and hours-clause maxima remain unmeasured. The default
+CT8 isolation deadline is too short for the measured four-layer fixture.
 
 Render documents 512 MB RAM for its Free web service and 2 GB and higher RAM
 options in other plans. The 512 MB free instance is **not an approved
