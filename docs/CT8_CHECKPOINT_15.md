@@ -19,9 +19,20 @@ The Work container has no FastAPI/pytest/uvicorn dependencies and no Docker.
 The owner subsequently ran the targeted isolation suite on Windows: 9 passed,
 2 POSIX-only tests skipped. The full Windows backend suite then passed:
 **1012 passed, 2 skipped, 2 existing deprecation warnings**, 27 September
-2026. The full API/backend Linux suite has **not** run. `CT8_ISOLATED_RUNS`
+2026. The independent reviewer subsequently ran the full backend suite on
+Linux: **1013 passed, 1 Windows-only test skipped**. `CT8_ISOLATED_RUNS`
 remains OFF by default. Frozen CT0–CT7
 calculations, hashes and React components remain unchanged. The 30-second
 deadline and 128 MiB IPC cap are still unapproved for public use. Require
 independent source review and platform reproduction before treating this
 candidate as a deployment control.
+
+The reviewer found a Windows cleanup condition that skipped parent-side
+`taskkill` if the direct child had already exited. The parent now attempts
+process-tree cleanup unconditionally. This is best effort: `taskkill /T` may
+not find a descendant once the root is gone. The root-exits-first scenario
+remains OPEN for a direct test or a reviewed Windows Job Object solution.
+The owner's earlier Windows 9-test run *did* include actual descendant PID
+checks after abrupt parent exit; the review's statement that this had never
+been verified was outdated. These are distinct paths and neither resolves
+the public Linux capacity/transport blockers.

@@ -6,7 +6,6 @@ explicitly enabled. This module never changes treaty calculations.
 from __future__ import annotations
 
 import multiprocessing as mp
-import os
 import pickle
 from queue import Queue, Empty
 import threading
@@ -138,8 +137,10 @@ def _run_process(target, args: tuple, deadline_seconds: float) -> bytes:
             raise CT8ExecutionFailure("child pipe closed without a complete response")
         return payload
     finally:
-        if os.name == "posix" or child.is_alive():
-            stop_spawned_group(child.pid)
+        # Always request tree cleanup: the direct child can exit after writing
+        # a result while a descendant remains active. This is an immediate
+        # best-effort Windows action; a vanished root requires further review.
+        stop_spawned_group(child.pid)
         if child.is_alive():
             child.terminate()
         child.join(timeout=2)
