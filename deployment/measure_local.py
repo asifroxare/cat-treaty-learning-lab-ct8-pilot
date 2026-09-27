@@ -92,11 +92,13 @@ def process_tree_peak(pid):
     sizes = [windows_working_set(child) for child in children]
     return sum(value for value in sizes if value is not None), children
 
-def payload(trials, *, sample_cap=100, detail="summary"):
+def payload(trials, *, sample_cap=100, detail="summary", total_occurrences=None):
     if not 1 <= sample_cap <= 10000 or not 1 <= trials <= sample_cap:
         raise ValueError("trial count must remain within the reviewed local sample cap")
     if detail not in {"summary", "full"}:
         raise ValueError("unsupported measurement detail")
+    if total_occurrences is not None and not trials <= total_occurrences <= 25000:
+        raise ValueError("occurrence count outside the reviewed local cap")
     request = json.loads(FIXTURE.read_text(encoding="utf-8"))
     initial = request["input"]["trials"][0]
     request["input"]["trials"] = []
@@ -113,6 +115,21 @@ def payload(trials, *, sample_cap=100, detail="summary"):
         request["input"]["trials"].append(trial)
     request["input"]["simulation"]["trial_count"] = trials
     request["response_detail"] = detail
+    if total_occurrences is not None:
+        additional = total_occurrences - trials
+        for trial in request["input"]["trials"]:
+            extra = min(2, additional)
+            for offset in range(extra):
+                occurrence = deepcopy(trial["occurrences"][0])
+                occurrence["event_sequence"] = offset + 2
+                occurrence["event_time"] = float((offset + 2) * 10)
+                identifier = f"T{trial['annual_trial_id']}-E{offset + 2}"
+                occurrence["event_id"] = identifier
+                occurrence["loss_basis"]["occurrence_id"] = identifier
+                trial["occurrences"].append(occurrence)
+            additional -= extra
+            if additional == 0:
+                break
     return json.dumps(request, separators=(",", ":")).encode("utf-8")
 
 

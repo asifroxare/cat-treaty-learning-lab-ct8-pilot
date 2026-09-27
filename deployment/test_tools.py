@@ -111,6 +111,20 @@ class DeploymentEvidenceTests(unittest.TestCase):
         self.assertEqual(request["input"]["trials"][-1]["occurrences"][0]["event_id"], "T10000-E1")
         self.assertLess(len(measure_local.payload(10000, sample_cap=10000, detail="full")), 12 * 1024 * 1024)
 
+    def test_row_limit_fixture_has_25000_unique_events_below_25_mib(self):
+        raw = measure_local.payload(10000, sample_cap=10000, detail="full", total_occurrences=25000)
+        self.assertLess(len(raw), 25 * 1024 * 1024)
+        request = json.loads(raw)
+        trials = request["input"]["trials"]
+        self.assertEqual(sum(len(trial["occurrences"]) for trial in trials), 25000)
+        ids = [event["event_id"] for trial in trials for event in trial["occurrences"]]
+        self.assertEqual(len(set(ids)), len(ids))
+        for trial in (trials[0], trials[4999], trials[5000], trials[-1]):
+            self.assertEqual([e["event_sequence"] for e in trial["occurrences"]],
+                             list(range(1, len(trial["occurrences"]) + 1)))
+            self.assertTrue(all(e["event_id"] == e["loss_basis"]["occurrence_id"]
+                                for e in trial["occurrences"]))
+
     def test_disposable_process_returns_complete_value_or_ends_on_deadline(self):
         answer = isolated_execution.execute("isolation_fixtures", "square", 7, timeout_seconds=10)
         self.assertEqual(answer.value, 49)

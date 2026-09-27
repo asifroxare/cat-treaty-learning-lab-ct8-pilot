@@ -29,19 +29,21 @@ def stop_tree(process):
         process.wait()
 
 
-def sample(python: Path, count: int):
+def sample(python: Path, count: int, *, scenario="one"):
     if count not in (1000, 2500, 5000, 10000):
         raise ValueError("count outside the fixed reviewed samples")
+    if scenario not in {"one", "rows25k"} or scenario == "rows25k" and count != 10000:
+        raise ValueError("scenario outside the fixed reviewed samples")
     environment = os.environ.copy()
     environment["PYTHONPATH"] = str(ROOT)
     process = subprocess.Popen([str(python), str(Path(__file__).with_name("measure_pickle_child.py")),
-                                str(count)], cwd=ROOT, env=environment,
+                                str(count), scenario], cwd=ROOT, env=environment,
                                stdin=subprocess.DEVNULL, stdout=subprocess.PIPE,
                                stderr=subprocess.PIPE)
     start = time.monotonic()
     peak = 0
     pids = set()
-    print(f"CT8 local probe: {count} full-detail trials started (30s / 800 MiB safety stops)", flush=True)
+    print(f"CT8 local probe: {count} full-detail trials, {scenario} started (30s / 800 MiB safety stops)", flush=True)
     next_progress = start + 5
     try:
         while process.poll() is None:
