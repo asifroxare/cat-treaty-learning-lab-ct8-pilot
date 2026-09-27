@@ -16,8 +16,11 @@ passed deadline and abrupt-parent Linux tests with a spawned descendant in
 the Work container. Thirteen dependency-free deployment-tool tests passed.
 
 The Work container has no FastAPI/pytest/uvicorn dependencies and no Docker.
-The full API/backend Linux suite and Windows regression for this candidate
-have **not** run. `CT8_ISOLATED_RUNS` remains OFF by default. Frozen CT0–CT7
+The owner subsequently ran the targeted isolation suite on Windows: 9 passed,
+2 POSIX-only tests skipped. The full Windows backend suite then passed:
+**1012 passed, 2 skipped, 2 existing deprecation warnings**, 27 September
+2026. The full API/backend Linux suite has **not** run. `CT8_ISOLATED_RUNS`
+remains OFF by default. Frozen CT0–CT7
 calculations, hashes and React components remain unchanged. The 30-second
 deadline and 128 MiB IPC cap are still unapproved for public use. Require
 independent source review and platform reproduction before treating this
