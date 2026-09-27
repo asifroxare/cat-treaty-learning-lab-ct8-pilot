@@ -11,9 +11,9 @@ from cat_treaty.ct6_orchestration import run_catalogue
 
 def main():
     count = int(sys.argv[1])
-    raw = payload(count, sample_cap=5000, detail="full")
-    if len(raw) > 6 * 1024 * 1024:
-        raise ValueError("local synthetic body exceeded 6 MiB")
+    raw = payload(count, sample_cap=10000, detail="full")
+    if len(raw) > 12 * 1024 * 1024:
+        raise ValueError("local synthetic body exceeded 12 MiB")
     request = CatalogueRunRequest.model_validate(
         _normalize_json_value(CatalogueRunRequest, json.loads(raw)))
     result = run_catalogue(request)

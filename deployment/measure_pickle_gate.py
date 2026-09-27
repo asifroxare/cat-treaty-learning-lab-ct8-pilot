@@ -30,7 +30,7 @@ def stop_tree(process):
 
 
 def sample(python: Path, count: int):
-    if count not in (1000, 2500, 5000):
+    if count not in (1000, 2500, 5000, 10000):
         raise ValueError("count outside the fixed reviewed samples")
     environment = os.environ.copy()
     environment["PYTHONPATH"] = str(ROOT)

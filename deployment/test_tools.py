@@ -100,9 +100,16 @@ class DeploymentEvidenceTests(unittest.TestCase):
 
     def test_pickle_probe_rejects_unreviewed_sample_before_starting_child(self):
         with self.assertRaisesRegex(ValueError, "fixed reviewed samples"):
-            measure_pickle_gate.sample(Path("unused-python"), 10000)
+            measure_pickle_gate.sample(Path("unused-python"), 10001)
         self.assertEqual(measure_pickle_gate.MAX_SECONDS, 30)
         self.assertEqual(measure_pickle_gate.MAX_PEAK_BYTES, 800 * 1024 * 1024)
+
+    def test_trial_limit_generator_remains_inside_input_byte_guard(self):
+        request = json.loads(measure_local.payload(10000, sample_cap=10000, detail="full"))
+        self.assertEqual(request["input"]["simulation"]["trial_count"], 10000)
+        self.assertEqual(len(request["input"]["trials"]), 10000)
+        self.assertEqual(request["input"]["trials"][-1]["occurrences"][0]["event_id"], "T10000-E1")
+        self.assertLess(len(measure_local.payload(10000, sample_cap=10000, detail="full")), 12 * 1024 * 1024)
 
     def test_disposable_process_returns_complete_value_or_ends_on_deadline(self):
         answer = isolated_execution.execute("isolation_fixtures", "square", 7, timeout_seconds=10)
