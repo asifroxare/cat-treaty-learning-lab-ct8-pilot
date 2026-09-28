@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { NavLink, Outlet } from "react-router-dom";
-import { CT8_PILOT_MODE } from "../api/config";
+import { CT8_NOCARD_MODE, CT8_PILOT_MODE } from "../api/config";
 import { loadPilotLimits } from "../api/pilotCapabilities";
 
 import "./AppShell.css";
@@ -45,6 +45,7 @@ export function AppShell() {
         <strong>Invited test release.</strong> Only measured pilot scenarios are available.
         {pilotLimits ? ` ${pilotLimits}` : " Limits are unavailable; check access before running a scenario."}
         {" "}Full CT6 capacity is deferred; the Python backend rejects out-of-scope requests.
+        {CT8_NOCARD_MODE && <> {" "}<a href="/auth/start">Sign in with GitHub</a></>}
       </p>}
 
       <nav className="primary-nav" aria-label="Primary navigation">

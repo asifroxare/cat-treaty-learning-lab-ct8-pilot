@@ -1,0 +1,25 @@
+# REVIEW ONLY: create a separate Worker; do not modify EdInsured Live.
+# Deploy only after no-card GitHub/Cloudflare account checks and independent review.
+main = "deployment/pilot_nocard_worker.mjs"
+compatibility_date = "2026-09-28"
+name = "ct8-cat-private-review"
+
+[assets]
+directory = "./frontend/dist"
+binding = "ASSETS"
+run_worker_first = true
+not_found_handling = "single-page-application"
+
+[[ratelimits]]
+name = "PILOT_RATE_LIMITER"
+namespace_id = "1002"  # replace with an unused namespace in the owner's account
+
+[ratelimits.simple]
+limit = 6
+period = 60
+
+# Provider-held secrets: PILOT_ASSERTION_KEY, PILOT_SESSION_KEY, PILOT_LOGIN_KEY,
+# PILOT_OAUTH_CLIENT_SECRET. Never commit real secrets or tester IDs.
+# Other reviewed vars: PILOT_NOCARD_ENABLED, PILOT_PUBLIC_HOST,
+# PILOT_ORIGIN_HOST, PILOT_OAUTH_CLIENT_ID, PILOT_ID_ALLOWLIST,
+# PILOT_EPOCH, PILOT_MAX_BODY_BYTES.

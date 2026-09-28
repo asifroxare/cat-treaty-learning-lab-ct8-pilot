@@ -1,5 +1,5 @@
 import { acceptAuthoritativeResponse, type AuthoritativeSuccessResponse } from "./authoritative";
-import { CT6_API_BASE_URL, CT8_PILOT_MODE } from "./config";
+import { CT6_API_BASE_URL, CT8_NOCARD_MODE, CT8_PILOT_MODE } from "./config";
 import type { CatalogueRunRequest, CT6Problem, HoursRunRequest } from "./contract";
 import { executionStateForProblem, type ExecutionState } from "./runState";
 import type { components } from "./generated/ct6";
@@ -64,6 +64,20 @@ export function createCT6Client(
   async function run(path: string, body: CatalogueRunRequest | HoursRunRequest, requestId?: string): Promise<RunResult> {
     const headers: Record<string, string> = { "Content-Type": "application/json" };
     if (requestId) headers["X-Request-ID"] = requestId;
+
+    if (CT8_NOCARD_MODE) {
+      try {
+        const session = await transport(`${normalizedBaseUrl}/auth/session`, { credentials: "include" });
+        if (!session.ok) return { ok: false, state: "pilot_access", problem: null, requestId: null };
+        const data: unknown = await session.json();
+        if (typeof data !== "object" || data === null || !("csrf" in data) ||
+            typeof data.csrf !== "string" || !/^[A-Za-z0-9_-]{32}$/.test(data.csrf))
+          return { ok: false, state: "pilot_access", problem: null, requestId: null };
+        headers["X-CT8-CSRF"] = data.csrf;
+      } catch {
+        return { ok: false, state: "offline", problem: null, requestId: null };
+      }
+    }
 
     let response: Response;
     try {

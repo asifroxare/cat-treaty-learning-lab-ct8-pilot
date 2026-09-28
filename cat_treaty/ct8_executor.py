@@ -40,7 +40,7 @@ def _watch_parent_or_exit():
     threading.Thread(target=stop_on_parent_exit, daemon=True).start()
 
 
-def _child(sender, mode, request):
+def _child(sender, mode, request, max_result_bytes=MAX_RESULT_BYTES):
     _watch_parent_or_exit()
     try:
         if mode == "catalogue":
@@ -61,7 +61,7 @@ def _child(sender, mode, request):
         message = ("internal", None)
     try:
         serialized = pickle.dumps(message, protocol=5)
-        if len(serialized) > MAX_RESULT_BYTES:
+        if len(serialized) > max_result_bytes:
             serialized = pickle.dumps(("internal", None), protocol=5)
         sender.send_bytes(serialized)
     finally:
@@ -73,11 +73,14 @@ def _child_entry(target, sender, args):
     target(sender, *args)
 
 
-def run_isolated(mode: Literal["catalogue", "hours-clause"], request: object, *, deadline_seconds: float):
+def run_isolated(mode: Literal["catalogue", "hours-clause"], request: object, *, deadline_seconds: float,
+                 max_result_bytes: int = MAX_RESULT_BYTES):
     """Return a complete engine result or raise a reviewed CT6 error category."""
-    if mode not in ("catalogue", "hours-clause") or not 1 <= deadline_seconds <= 300:
+    if (mode not in ("catalogue", "hours-clause") or not 1 <= deadline_seconds <= 300 or
+            type(max_result_bytes) is not int or not 1 <= max_result_bytes <= MAX_RESULT_BYTES):
         raise ValueError("invalid CT8 execution configuration")
-    payload = _run_process(_child, (mode, request), deadline_seconds)
+    payload = _run_process(_child, (mode, request, max_result_bytes), deadline_seconds,
+                           max_result_bytes=max_result_bytes)
     tag, value = pickle.loads(payload)  # trusted bytes from our spawned child only
     if tag == "ok":
         return value
@@ -90,9 +93,10 @@ def run_isolated(mode: Literal["catalogue", "hours-clause"], request: object, *,
     raise CT8ExecutionFailure("isolated computation failed")
 
 
-def _run_process(target, args: tuple, deadline_seconds: float) -> bytes:
+def _run_process(target, args: tuple, deadline_seconds: float, *,
+                 max_result_bytes: int = MAX_RESULT_BYTES) -> bytes:
     """One disposable process; internal seam for exact timeout tests."""
-    if deadline_seconds <= 0:
+    if deadline_seconds <= 0 or not 1 <= max_result_bytes <= MAX_RESULT_BYTES:
         raise ValueError("deadline must be positive")
     context = mp.get_context("spawn")
     receiver, sender = context.Pipe(duplex=False)
@@ -109,7 +113,7 @@ def _run_process(target, args: tuple, deadline_seconds: float) -> bytes:
 
     def read_result():
         try:
-            completed.put(("bytes", receiver.recv_bytes(MAX_RESULT_BYTES)))
+            completed.put(("bytes", receiver.recv_bytes(max_result_bytes)))
         except (EOFError, OSError) as error:
             completed.put(("closed", type(error).__name__))
 
