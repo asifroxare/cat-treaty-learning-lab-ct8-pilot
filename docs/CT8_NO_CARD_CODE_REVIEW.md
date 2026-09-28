@@ -1,5 +1,7 @@
 # CT8 no-card private tester: independent code review packet
 
+**Historical baseline for commit bbed083.** The review response and corrected candidate are in `CT8_NO_CARD_REVIEW_RESPONSE.md`; earlier counts and open items below describe the original candidate only.
+
 **28 September 2026. Review candidate; not approved for deployment or invitations.** Render service is Suspended, Auto-Deploy Off; no OAuth app/Worker/secrets/allowlist configured. Parent commit `ab3bff63fe2e9cb2839a57a6df7d6ca2c578c9fd`. Read `CT8_NO_CARD_PRIVATE_TESTER_SPEC.md` first, then `deployment/pilot_nocard_worker.mjs`, `cat_treaty/pilot_nocard_api.py`, `cat_treaty/ct8_executor.py` and the new tests.
 
 ## Actual changes

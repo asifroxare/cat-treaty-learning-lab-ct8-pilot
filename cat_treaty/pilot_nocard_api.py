@@ -6,12 +6,14 @@ one-use assertion, never a browser cookie or a forwarded identity header.
 from __future__ import annotations
 
 import asyncio
+import base64
 from collections import defaultdict, deque
 import hashlib
 import hmac
 import json
 import os
 import re
+import secrets
 import threading
 import time
 from uuid import uuid4
@@ -39,6 +41,17 @@ MAX_ASSERTION_SKEW = 15
 MAX_NONCES = 2048
 
 
+def _secret(value: str) -> bool:
+    if not isinstance(value, str) or not 43 <= len(value) <= 256 or not re.fullmatch(r"[A-Za-z0-9_-]+", value):
+        return False
+    try:
+        raw = base64.urlsafe_b64decode(value + "=" * (-len(value) % 4))
+    except (ValueError, base64.binascii.Error):
+        return False
+    return (len(raw) >= 32 and base64.urlsafe_b64encode(raw).rstrip(b"=").decode() == value
+            and len(set(raw)) >= 16 and len(set(raw[:32])) >= 16)
+
+
 def _problem(status: int, code: str, request_id: str) -> JSONResponse:
     record(mode="pilot", outcome=code, include_resource=False)
     return JSONResponse({"type": "about:blank", "title": "Pilot request unavailable",
@@ -56,13 +69,22 @@ def create_nocard_app(*, config: dict[str, str] | None = None) -> FastAPI:
     public = env.get("CT8_NOCARD_PUBLIC_HOST", "")
     if not HOST.fullmatch(host) or not HOST.fullmatch(public) or host == public:
         raise ValueError("two exact pilot hostnames required")
-    keys = {"current": env.get("CT8_NOCARD_ASSERTION_KEY", "")}
+    worker_count = env.get("WEB_CONCURRENCY", "1")
+    if worker_count != "1":
+        raise ValueError("no-card pilot requires exactly one worker")
+    current_id = env.get("CT8_NOCARD_ASSERTION_KEY_ID", "")
+    previous_id = env.get("CT8_NOCARD_ASSERTION_PREVIOUS_ID", "")
+    if not re.fullmatch(r"[A-Za-z0-9_-]{1,32}", current_id):
+        raise ValueError("explicit assertion key identifier required")
+    keys = {current_id: env.get("CT8_NOCARD_ASSERTION_KEY", "")}
     previous = env.get("CT8_NOCARD_ASSERTION_PREVIOUS", "")
+    if bool(previous) != bool(previous_id) or (previous and (previous_id == current_id or
+            not re.fullmatch(r"[A-Za-z0-9_-]{1,32}", previous_id))):
+        raise ValueError("distinct previous assertion key identifier required")
     if previous:
-        keys["previous"] = previous
-    if any(not 43 <= len(key) <= 256 or any(not 33 <= ord(c) <= 126 for c in key)
-           for key in keys.values()):
-        raise ValueError("high entropy assertion key required")
+        keys[previous_id] = previous
+    if any(not _secret(value) for value in keys.values()) or len(set(keys.values())) != len(keys):
+        raise ValueError("random base64url assertion keys required")
     allowed_raw = env.get("CT8_NOCARD_ID_ALLOWLIST", "")
     allowed = set(allowed_raw.split(","))
     if not allowed or any(not ID.fullmatch(uid) for uid in allowed) or len(allowed) > 25:
@@ -79,8 +101,10 @@ def create_nocard_app(*, config: dict[str, str] | None = None) -> FastAPI:
     app = FastAPI(title="CT8 no-card private review candidate", docs_url=None,
                   redoc_url=None, openapi_url=None)
     active = threading.BoundedSemaphore(1)
+    validating = threading.BoundedSemaphore(1)
     lock = threading.Lock()
     seen: dict[str, float] = {}
+    boot = secrets.token_urlsafe(24)
     activity: dict[str, deque[float]] = defaultdict(deque)
 
     def verified(request: Request, path: str, method: str, digest: str) -> str | None:
@@ -90,11 +114,13 @@ def create_nocard_app(*, config: dict[str, str] | None = None) -> FastAPI:
         kid = headers.get("X-CT8-Assertion-Key", "")
         uid = headers.get("X-CT8-Assertion-ID", "")
         nonce = headers.get("X-CT8-Assertion-Nonce", "")
+        claimed_boot = headers.get("X-CT8-Assertion-Boot", "")
         timestamp = headers.get("X-CT8-Assertion-Time", "")
         signature = headers.get("X-CT8-Assertion-Signature", "")
         claimed_digest = headers.get("X-CT8-Assertion-Digest", "")
         if (kid not in keys or uid not in allowed or not ID.fullmatch(uid) or
-                not NONCE.fullmatch(nonce) or not HEX.fullmatch(signature) or
+                not NONCE.fullmatch(nonce) or not hmac.compare_digest(claimed_boot, boot) or
+                not HEX.fullmatch(signature) or
                 not HEX.fullmatch(claimed_digest) or claimed_digest != digest or
                 not re.fullmatch(r"[0-9]{10}", timestamp)):
             return None
@@ -102,12 +128,12 @@ def create_nocard_app(*, config: dict[str, str] | None = None) -> FastAPI:
         if abs(now - int(timestamp)) > MAX_ASSERTION_SKEW:
             return None
         message = "\n".join(("ct8.1", kid, method, path, host, public, uid,
-                             claimed_digest, timestamp, nonce)).encode("ascii")
+                             claimed_digest, timestamp, nonce, boot)).encode("ascii")
         expected = hmac.new(keys[kid].encode("ascii"), message, hashlib.sha256).hexdigest()
         if not hmac.compare_digest(expected, signature):
             return None
-        # One instance/worker only. This cache is deliberately bounded; a
-        # restart may forget a nonce within the narrow assertion skew.
+        # One instance/worker only. The random boot token prevents a replay
+        # against a restarted instance even if the old nonce cache is lost.
         with lock:
             for old, expiry in list(seen.items()):
                 if expiry <= now:
@@ -121,7 +147,8 @@ def create_nocard_app(*, config: dict[str, str] | None = None) -> FastAPI:
     async def ready(request: Request):
         if request.headers.get("host") != host:
             return _problem(404, "CT8_PRIVATE_ROUTE", str(uuid4()))
-        return {"status": "ready", "mode": "private-review"}
+        return JSONResponse({"status": "ready", "mode": "private-review", "boot": boot},
+                            headers={"Cache-Control": "no-store"})
 
     @app.get(PREFIX + "/capabilities", include_in_schema=False)
     async def capabilities(request: Request):
@@ -161,11 +188,20 @@ def create_nocard_app(*, config: dict[str, str] | None = None) -> FastAPI:
             raw.extend(chunk)
         if not hmac.compare_digest(hashlib.sha256(raw).hexdigest(), claimed_digest):
             return _problem(401, "CT8_PRIVATE_AUTH", request_id)
-        try:
+        def validate():
             data = json.loads(raw)
             limits.check(mode, data)
             model = CatalogueRunRequest if mode == "catalogue" else HoursRunRequest
-            body = model.model_validate(_normalize_json_value(model, data))
+            return model.model_validate(_normalize_json_value(model, data))
+        if not validating.acquire(blocking=False):
+            return _problem(503, "CT8_PILOT_BUSY", request_id)
+        def bounded_validation():
+            try:
+                return validate()
+            finally:
+                validating.release()
+        try:
+            body = await asyncio.to_thread(bounded_validation)
         except (UnicodeDecodeError, json.JSONDecodeError, RecursionError, ValidationError, TypeError, ValueError) as error:
             return _problem(413 if isinstance(error, PilotLimitExceeded) else 422,
                             "CT8_PILOT_LIMIT" if isinstance(error, PilotLimitExceeded) else "CT8_PILOT_INPUT", request_id)

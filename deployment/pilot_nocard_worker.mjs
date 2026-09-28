@@ -8,6 +8,7 @@ const pages = new Set(["/", "/guided", "/explore", "/hours-clause", "/compare", 
 const sessionName = "__Host-CT8PilotSession";
 const loginName = "__Host-CT8PilotLogin";
 const encoder = new TextEncoder();
+const discardLogin = `${loginName}=; Secure; HttpOnly; SameSite=Lax; Path=/; Max-Age=0`;
 
 function bytes64(bytes) {
   return btoa(String.fromCharCode(...new Uint8Array(bytes))).replaceAll("+", "-").replaceAll("/", "_").replace(/=+$/, "");
@@ -52,14 +53,25 @@ function security(headers = {}) {
 function deny(status = 401) {
   return new Response("Private pilot access required", { status, headers: security() });
 }
+function failedCallback(status = 401) {
+  return new Response("Private pilot access required", { status, headers: security({ "Set-Cookie": discardLogin }) });
+}
+function randomSecret(value) {
+  try {
+    if (typeof value !== "string" || value.length < 43 || value.length > 256) return false;
+    const raw = from64(value);
+    return raw.length >= 32 && bytes64(raw) === value && new Set(raw).size >= 16 &&
+      new Set(raw.slice(0, 32)).size >= 16;
+  } catch { return false; }
+}
 function configured(env, hostname) {
   const ids = (env.PILOT_ID_ALLOWLIST ?? "").split(",");
   return env.PILOT_NOCARD_ENABLED === "true" && env.PILOT_PUBLIC_HOST === hostname &&
     /^[a-z0-9-]+\.onrender\.com$/.test(env.PILOT_ORIGIN_HOST ?? "") &&
     /^[a-z0-9-]+\.asif-rox\.workers\.dev$/.test(hostname) &&
-    [env.PILOT_ASSERTION_KEY, env.PILOT_SESSION_KEY, env.PILOT_LOGIN_KEY]
-      .every(s => typeof s === "string" && s.length >= 43 && s.length <= 256) &&
+    [env.PILOT_ASSERTION_KEY, env.PILOT_SESSION_KEY, env.PILOT_LOGIN_KEY].every(randomSecret) &&
     new Set([env.PILOT_ASSERTION_KEY, env.PILOT_SESSION_KEY, env.PILOT_LOGIN_KEY]).size === 3 &&
+    /^[A-Za-z0-9_-]{1,32}$/.test(env.PILOT_ASSERTION_KEY_ID ?? "") &&
     typeof env.PILOT_OAUTH_CLIENT_SECRET === "string" && env.PILOT_OAUTH_CLIENT_SECRET.length >= 32 &&
     env.PILOT_OAUTH_CLIENT_SECRET.length <= 256 &&
     /^[A-Za-z0-9._-]{5,128}$/.test(env.PILOT_OAUTH_CLIENT_ID ?? "") &&
@@ -69,10 +81,10 @@ function configured(env, hostname) {
     Number(env.PILOT_MAX_BODY_BYTES) >= 1 && Number(env.PILOT_MAX_BODY_BYTES) <= 1048576 &&
     typeof env.PILOT_RATE_LIMITER?.limit === "function";
 }
-async function admitted(env, request, label) {
+async function admitted(env, request, label, uid = "") {
   try {
     const ip = request.headers.get("CF-Connecting-IP") ?? "unknown";
-    return (await env.PILOT_RATE_LIMITER.limit({ key: `${label}:${ip}` }))?.success === true;
+    return (await env.PILOT_RATE_LIMITER.limit({ key: `${label}:${uid || ip}` }))?.success === true;
   } catch { return false; }
 }
 async function identity(request, env) {
@@ -119,7 +131,7 @@ async function begin(request, env, origin) {
   }) });
 }
 async function callback(request, env, url, origin) {
-  if (!await admitted(env, request, "callback")) return deny(429);
+  if (!await admitted(env, request, "callback")) return failedCallback(429);
   const state = await verifySigned(cookie(request, loginName), env.PILOT_LOGIN_KEY);
   const code = url.searchParams.get("code") ?? "";
   const received = url.searchParams.get("state") ?? "";
@@ -127,8 +139,7 @@ async function callback(request, env, url, origin) {
       state.exp <= Math.floor(Date.now()/1000) || state.exp > Math.floor(Date.now()/1000)+300 ||
       !/^[A-Za-z0-9_-]{43}$/.test(state.verifier ?? "") ||
       !/^[A-Za-z0-9_-]{32}$/.test(received) || received !== state.state ||
-      !/^[A-Za-z0-9_-]{5,256}$/.test(code)) return deny();
-  const discardLogin = `${loginName}=; Secure; HttpOnly; SameSite=Lax; Path=/; Max-Age=0`;
+      !/^[A-Za-z0-9_-]{5,256}$/.test(code)) return failedCallback();
   try {
     const response = await fetch("https://github.com/login/oauth/access_token", {
       method: "POST", redirect: "manual", signal: AbortSignal.timeout(6000),
@@ -137,18 +148,18 @@ async function callback(request, env, url, origin) {
         client_secret: env.PILOT_OAUTH_CLIENT_SECRET, code,
         redirect_uri: `${origin}/auth/callback`, code_verifier: state.verifier }),
     });
-    if (!response.ok) return deny();
+    if (!response.ok) return failedCallback();
     const token = await response.json();
-    if (!/^[A-Za-z0-9_]+$/.test(token.access_token ?? "") || token.scope) return deny();
+    if (!/^[A-Za-z0-9_]+$/.test(token.access_token ?? "") || token.scope) return failedCallback();
     const user = await fetch("https://api.github.com/user", {
       signal: AbortSignal.timeout(6000), redirect: "manual",
       headers: { Authorization: `Bearer ${token.access_token}`, Accept: "application/vnd.github+json",
         "User-Agent": "CT8-private-pilot" },
     });
-    if (!user.ok) return deny();
+    if (!user.ok) return failedCallback();
     const profile = await user.json();
     const id = String(profile.id);
-    if (!Number.isSafeInteger(profile.id) || !(env.PILOT_ID_ALLOWLIST ?? "").split(",").includes(id)) return deny();
+    if (!Number.isSafeInteger(profile.id) || !(env.PILOT_ID_ALLOWLIST ?? "").split(",").includes(id)) return failedCallback();
     const now = Math.floor(Date.now()/1000);
     const session = await signed({ id, iat: now, exp: now+900, epoch: env.PILOT_EPOCH,
       csrf: random64() }, env.PILOT_SESSION_KEY);
@@ -156,7 +167,25 @@ async function callback(request, env, url, origin) {
     headers.append("Set-Cookie", discardLogin);
     headers.append("Set-Cookie", `${sessionName}=${session}; Secure; HttpOnly; SameSite=Lax; Path=/; Max-Age=900`);
     return new Response(null, { status: 303, headers });
-  } catch { return deny(); }
+  } catch { return failedCallback(); }
+}
+
+async function readyBoot(env) {
+  // A cold Render Free instance may take longer than the assertion's 15 s skew.
+  // Wake it first, then sign for the specific process that answered readiness.
+  for (let attempt = 0; attempt < 2; attempt++) {
+    try {
+      const response = await fetch(`https://${env.PILOT_ORIGIN_HOST}/health/ready`, {
+        redirect: "manual", signal: AbortSignal.timeout(attempt ? 10000 : 75000),
+        headers: { "Cache-Control": "no-store" },
+      });
+      if (response.ok) {
+        const data = await response.json();
+        if (data.status === "ready" && /^[A-Za-z0-9_-]{32}$/.test(data.boot ?? "")) return data.boot;
+      }
+    } catch { /* Never forward an assertion without a current boot token. */ }
+  }
+  return null;
 }
 
 export default {
@@ -194,7 +223,7 @@ export default {
     const expected = routes.get(url.pathname);
     const who = await identity(request, env);
     if (request.method !== expected || !who) return deny();
-    if (!await admitted(env, request, "api")) return deny(429);
+    if (!await admitted(env, request, "api", who.id)) return deny(429);
     let body = null;
     if (expected === "POST") {
       if (request.headers.get("Origin") !== origin || request.headers.get("X-CT8-CSRF") !== who.csrf ||
@@ -203,18 +232,26 @@ export default {
       if (!body) return deny(413);
     }
     const digest = hex(await crypto.subtle.digest("SHA-256", body ?? new Uint8Array()));
+    const boot = await readyBoot(env);
+    if (!boot) return new Response("Pilot temporarily unavailable", { status: 504, headers: security() });
     const timestamp = String(Math.floor(Date.now()/1000));
     const nonce = random64();
-    const message = ["ct8.1", "current", expected, url.pathname, env.PILOT_ORIGIN_HOST,
-      url.hostname, who.id, digest, timestamp, nonce].join("\n");
+    const message = ["ct8.1", env.PILOT_ASSERTION_KEY_ID, expected, url.pathname, env.PILOT_ORIGIN_HOST,
+      url.hostname, who.id, digest, timestamp, nonce, boot].join("\n");
     const signature = hex(await crypto.subtle.sign("HMAC", await key(env.PILOT_ASSERTION_KEY), encoder.encode(message)));
-    const headers = new Headers({ "X-CT8-Assertion-Key": "current", "X-CT8-Assertion-ID": who.id,
+    const headers = new Headers({ "X-CT8-Assertion-Key": env.PILOT_ASSERTION_KEY_ID, "X-CT8-Assertion-ID": who.id,
       "X-CT8-Assertion-Nonce": nonce, "X-CT8-Assertion-Time": timestamp,
-      "X-CT8-Assertion-Signature": signature, "X-CT8-Assertion-Digest": digest });
+      "X-CT8-Assertion-Signature": signature, "X-CT8-Assertion-Digest": digest,
+      "X-CT8-Assertion-Boot": boot });
     if (body) headers.set("Content-Type", "application/json");
-    const upstream = await fetch(`https://${env.PILOT_ORIGIN_HOST}${url.pathname}`, {
-      method: expected, headers, body, redirect: "manual", signal: AbortSignal.timeout(45000),
-    });
+    let upstream;
+    try {
+      upstream = await fetch(`https://${env.PILOT_ORIGIN_HOST}${url.pathname}`, {
+        method: expected, headers, body, redirect: "manual", signal: AbortSignal.timeout(45000),
+      });
+    } catch {
+      return new Response("Pilot temporarily unavailable", { status: 504, headers: security() });
+    }
     const output = new Headers(upstream.headers);
     output.delete("Set-Cookie");
     for (const [name, value] of Object.entries(security())) output.set(name, value);

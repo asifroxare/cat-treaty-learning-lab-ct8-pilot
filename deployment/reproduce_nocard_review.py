@@ -36,8 +36,8 @@ def main() -> None:
          "deployment/test_pilot_nocard_worker.mjs"], ROOT, env)
     run([npm, "ci"], FRONTEND, env)
     run([npm, "run", "check"], FRONTEND, env)
-    pilot = {**env, "VITE_CT8_PILOT_MODE": "true", "VITE_CT8_NOCARD_MODE": "true",
-        "VITE_CT6_API_BASE_URL": "https://ct8-cat.asif-rox.workers.dev"}
+    pilot = {**env, "VITE_CT8_PILOT_MODE": "true", "VITE_CT8_NOCARD_MODE": "true"}
+    pilot.pop("VITE_CT6_API_BASE_URL", None)
     run([npm, "run", "build"], FRONTEND, pilot)
     run([npm, "run", "build:audit"], FRONTEND, pilot)
     print("CT8 no-card review candidate: LOCAL PASS (live provider/browser acceptance still open)")

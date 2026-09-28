@@ -1,14 +1,16 @@
 /** Test-only: pass one frozen synthetic request through Worker authentication. */
 import { readFileSync } from "node:fs";
+import { createHash } from "node:crypto";
 import pilot from "./pilot_nocard_worker.mjs";
 
 const publicHost = "ct8-cat.asif-rox.workers.dev";
 const env = {
   PILOT_NOCARD_ENABLED: "true", PILOT_PUBLIC_HOST: publicHost,
   PILOT_ORIGIN_HOST: "cat-treaty-learning-lab-ct8-pilot.onrender.com",
-  PILOT_ASSERTION_KEY: "review-only-signing-key-" + "x".repeat(48),
-  PILOT_SESSION_KEY: "session-secret-" + "s".repeat(48),
-  PILOT_LOGIN_KEY: "login-secret-" + "l".repeat(48),
+  PILOT_ASSERTION_KEY: createHash("sha256").update("review-only-assertion-key").digest("base64url"),
+  PILOT_ASSERTION_KEY_ID: "k1",
+  PILOT_SESSION_KEY: createHash("sha256").update("review-session-key").digest("base64url"),
+  PILOT_LOGIN_KEY: createHash("sha256").update("review-login-key").digest("base64url"),
   PILOT_OAUTH_CLIENT_SECRET: "c".repeat(40),
   PILOT_OAUTH_CLIENT_ID: "Iv1.abcdef012345", PILOT_ID_ALLOWLIST: "12345",
   PILOT_EPOCH: "reviewonly2026", PILOT_MAX_BODY_BYTES: "4096",
@@ -17,6 +19,8 @@ const env = {
 const origin = `https://${publicHost}`;
 let forwarded = null;
 globalThis.fetch = async (url, options) => {
+  if (url === `https://${env.PILOT_ORIGIN_HOST}/health/ready`)
+    return Response.json({ status: "ready", boot: process.env.CT8_TEST_BOOT });
   if (url === "https://github.com/login/oauth/access_token")
     return Response.json({ access_token: "gho_reviewonly", scope: "" });
   if (url === "https://api.github.com/user") return Response.json({ id: 12345 });

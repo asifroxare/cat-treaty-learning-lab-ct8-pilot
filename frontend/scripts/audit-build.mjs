@@ -21,7 +21,7 @@ const compiled = textFiles.filter((path) => extname(path) === ".js")
 if (forbiddenNames.length || leaked.length) {
   throw new Error(`CT7 production-build audit failed: ${[...forbiddenNames, ...leaked].join(", ")}`);
 }
-if (process.env.VITE_CT8_PILOT_MODE === "true") {
+if (process.env.VITE_CT8_PILOT_MODE === "true" && process.env.VITE_CT8_NOCARD_MODE !== "true") {
   const origin = process.env.VITE_CT6_API_BASE_URL ?? "";
   if (!/^https:\/\/[a-z0-9.-]+$/i.test(origin))
     throw new Error("CT8 pilot build requires an exact HTTPS API origin");
@@ -33,10 +33,10 @@ if (process.env.VITE_CT8_NOCARD_MODE === "true" && process.env.VITE_CT8_PILOT_MO
   throw new Error("no-card mode requires a separate CT8 pilot build");
 }
 if (process.env.VITE_CT8_NOCARD_MODE === "true") {
-  const origin = process.env.VITE_CT6_API_BASE_URL ?? "";
-  if (!/^https:\/\/[a-z0-9-]+\.asif-rox\.workers\.dev$/.test(origin) ||
-      !compiled.includes("/auth/session") || !compiled.includes("/auth/start"))
-    throw new Error("no-card build requires the exact same-origin Worker and auth routes");
+  if (process.env.VITE_CT6_API_BASE_URL || !compiled.includes("/api/pilot/v1") ||
+      !compiled.includes("/auth/session") || !compiled.includes("/auth/start") ||
+      compiled.includes("localhost:8000") || compiled.includes(".onrender.com"))
+    throw new Error("no-card build requires relative same-origin API and auth routes");
 }
 const bytes = files.reduce((total, path) => total + statSync(path).size, 0);
 console.log(`CT7 production-build audit: PASS (${files.length} files, ${bytes} bytes, no maps/secrets/local paths)`);
