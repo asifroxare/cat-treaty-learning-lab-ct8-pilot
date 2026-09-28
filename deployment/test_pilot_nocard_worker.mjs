@@ -149,3 +149,32 @@ test("all callback denials clear the browser's login cookie", async () => {
     })).status, 503);
   } finally { globalThis.fetch = prior; }
 });
+
+test("public-test switch admits a new GitHub ID but private mode still denies it", async () => {
+  const prior = globalThis.fetch;
+  globalThis.fetch = async (url) => {
+    if (url === "https://github.com/login/oauth/access_token")
+      return Response.json({ access_token: "gho_reviewonly", scope: "" });
+    if (url === "https://api.github.com/user") return Response.json({ id: 98765 });
+    throw Error("unexpected request");
+  };
+  try {
+    async function login(settings) {
+      const start = await pilot.fetch(new Request(`${root}/auth/start`), settings);
+      const state = new URL(start.headers.get("Location")).searchParams.get("state");
+      return pilot.fetch(new Request(`${root}/auth/callback?code=reviewCode1&state=${state}&iss=https%3A%2F%2Fgithub.com%2Flogin%2Foauth`,
+        { headers: { Cookie: start.headers.get("Set-Cookie").split(";", 1)[0] } }), settings);
+    }
+    assert.equal((await login(env)).status, 401);
+    const open = await login({ ...env, PILOT_PUBLIC_TEST_ENABLED: "true" });
+    assert.equal(open.status, 303);
+    const session = open.headers.getSetCookie().find(value => value.startsWith("__Host-CT8PilotSession="));
+    assert.ok(session);
+    assert.equal((await pilot.fetch(new Request(`${root}/auth/session`, {
+      headers: { Cookie: session.split(";", 1)[0] },
+    }), { ...env, PILOT_PUBLIC_TEST_ENABLED: "true" })).status, 200);
+    assert.equal((await pilot.fetch(new Request(`${root}/auth/session`, {
+      headers: { Cookie: session.split(";", 1)[0] },
+    }), env)).status, 401);
+  } finally { globalThis.fetch = prior; }
+});

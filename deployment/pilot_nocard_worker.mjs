@@ -66,7 +66,9 @@ function randomSecret(value) {
 }
 function configured(env, hostname) {
   const ids = (env.PILOT_ID_ALLOWLIST ?? "").split(",");
-  return env.PILOT_NOCARD_ENABLED === "true" && env.PILOT_PUBLIC_HOST === hostname &&
+  return env.PILOT_NOCARD_ENABLED === "true" &&
+    (env.PILOT_PUBLIC_TEST_ENABLED === undefined || ["true", "false"].includes(env.PILOT_PUBLIC_TEST_ENABLED)) &&
+    env.PILOT_PUBLIC_HOST === hostname &&
     /^[a-z0-9-]+\.onrender\.com$/.test(env.PILOT_ORIGIN_HOST ?? "") &&
     /^[a-z0-9-]+\.asif-rox\.workers\.dev$/.test(hostname) &&
     [env.PILOT_ASSERTION_KEY, env.PILOT_SESSION_KEY, env.PILOT_LOGIN_KEY].every(randomSecret) &&
@@ -94,7 +96,8 @@ async function identity(request, env) {
       !Number.isInteger(payload.iat) || !Number.isInteger(payload.exp) ||
       payload.iat > now || payload.exp <= now || payload.exp - payload.iat > 900 ||
       payload.epoch !== env.PILOT_EPOCH || !/^[A-Za-z0-9_-]{32}$/.test(payload.csrf ?? "") ||
-      !(env.PILOT_ID_ALLOWLIST ?? "").split(",").includes(payload.id)) return null;
+      (env.PILOT_PUBLIC_TEST_ENABLED !== "true" &&
+       !(env.PILOT_ID_ALLOWLIST ?? "").split(",").includes(payload.id))) return null;
   return payload;
 }
 async function limitedBody(request, limit) {
@@ -165,7 +168,9 @@ async function callback(request, env, url, origin) {
     if (!user.ok) return failedCallback();
     const profile = await user.json();
     const id = String(profile.id);
-    if (!Number.isSafeInteger(profile.id) || !(env.PILOT_ID_ALLOWLIST ?? "").split(",").includes(id)) return failedCallback();
+    if (!Number.isSafeInteger(profile.id) || profile.id <= 0 ||
+        (env.PILOT_PUBLIC_TEST_ENABLED !== "true" &&
+         !(env.PILOT_ID_ALLOWLIST ?? "").split(",").includes(id))) return failedCallback();
     const now = Math.floor(Date.now()/1000);
     const session = await signed({ id, iat: now, exp: now+900, epoch: env.PILOT_EPOCH,
       csrf: random64() }, env.PILOT_SESSION_KEY);

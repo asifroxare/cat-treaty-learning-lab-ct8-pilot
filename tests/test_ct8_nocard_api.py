@@ -156,3 +156,27 @@ def test_replay_across_restart_and_previous_key_rotation():
         boot(second)
         assert second.get(path, headers=original).status_code == 401
         assert second.get(path, headers=signed(path, method="GET")).status_code == 200
+
+
+def test_public_test_requires_explicit_switch_and_caps_runs_globally(monkeypatch):
+    path = "/api/pilot/v1/runs/catalogue"
+    raw = (FIXTURES / "approved-catalogue.json").read_bytes()
+    calls = []
+    def isolated(*args, **kwargs):
+        calls.append(1)
+        raise RuntimeError("synthetic stop")
+    monkeypatch.setattr("cat_treaty.pilot_nocard_api.run_isolated", isolated)
+    config = {**CONFIG, "CT8_NOCARD_PUBLIC_TEST_ENABLED": "true"}
+    with TestClient(create_nocard_app(config=config), base_url=f"https://{HOST}") as client:
+        boot(client)
+        assert client.post(path, content=raw, headers=signed(path, raw, uid="98765")).status_code == 500
+        assert client.post(path, content=raw, headers=signed(path, raw, uid="65432")).status_code == 500
+        third = client.post(path, content=raw, headers=signed(path, raw, uid="12345"))
+        assert third.status_code == 429 and third.json()["code"] == "CT8_PILOT_BUSY"
+        assert len(calls) == 2
+        assert client.post(path, content=raw, headers=signed(path, raw, uid="email@example.com")).status_code == 401
+        assert client.get("/api/pilot/v1/capabilities", headers=signed(
+            "/api/pilot/v1/capabilities", method="GET", uid="98765")).status_code == 200
+    with TestClient(create_nocard_app(config=CONFIG), base_url=f"https://{HOST}") as client:
+        boot(client)
+        assert client.post(path, content=raw, headers=signed(path, raw, uid="98765")).status_code == 401

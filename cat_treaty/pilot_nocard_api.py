@@ -89,6 +89,10 @@ def create_nocard_app(*, config: dict[str, str] | None = None) -> FastAPI:
     allowed = set(allowed_raw.split(","))
     if not allowed or any(not ID.fullmatch(uid) for uid in allowed) or len(allowed) > 25:
         raise ValueError("numeric tester allowlist required")
+    public_test = env.get("CT8_NOCARD_PUBLIC_TEST_ENABLED", "false")
+    if public_test not in ("true", "false"):
+        raise ValueError("explicit public-test switch required")
+    public_test = public_test == "true"
     limits = PilotLimits.from_json(env.get("CT8_NOCARD_LIMITS_JSON", ""))
     try:
         deadline = int(env["CT8_NOCARD_DEADLINE_SECONDS"])
@@ -106,6 +110,7 @@ def create_nocard_app(*, config: dict[str, str] | None = None) -> FastAPI:
     seen: dict[str, float] = {}
     boot = secrets.token_urlsafe(24)
     activity: dict[str, deque[float]] = defaultdict(deque)
+    global_activity: deque[float] = deque()
 
     def verified(request: Request, path: str, method: str, digest: str) -> str | None:
         if request.headers.get("host") != host:
@@ -118,7 +123,7 @@ def create_nocard_app(*, config: dict[str, str] | None = None) -> FastAPI:
         timestamp = headers.get("X-CT8-Assertion-Time", "")
         signature = headers.get("X-CT8-Assertion-Signature", "")
         claimed_digest = headers.get("X-CT8-Assertion-Digest", "")
-        if (kid not in keys or uid not in allowed or not ID.fullmatch(uid) or
+        if (kid not in keys or not ID.fullmatch(uid) or (not public_test and uid not in allowed) or
                 not NONCE.fullmatch(nonce) or not NONCE.fullmatch(claimed_boot) or
                 not hmac.compare_digest(claimed_boot, boot) or
                 not HEX.fullmatch(signature) or
@@ -176,12 +181,26 @@ def create_nocard_app(*, config: dict[str, str] | None = None) -> FastAPI:
             return _problem(413, "CT8_PILOT_LIMIT", request_id)
         with lock:
             now = time.monotonic()
+            if public_test:
+                while global_activity and now - global_activity[0] >= 60:
+                    global_activity.popleft()
+                # One Render Free instance, one Uvicorn worker: a host-wide budget
+                # applied before reading or validating the request body.
+                if len(global_activity) >= 2:
+                    return _problem(429, "CT8_PILOT_BUSY", request_id)
+                for old_uid, history in list(activity.items()):
+                    while history and now - history[0] >= 60:
+                        history.popleft()
+                    if not history:
+                        del activity[old_uid]
             queue = activity[uid]
             while queue and now - queue[0] >= 60:
                 queue.popleft()
             if len(queue) >= limits.max_requests_per_minute:
                 return _problem(429, "CT8_PILOT_BUSY", request_id)
             queue.append(now)
+            if public_test:
+                global_activity.append(now)
         raw = bytearray()
         async for chunk in request.stream():
             if len(raw) + len(chunk) > limits.max_body_bytes:
