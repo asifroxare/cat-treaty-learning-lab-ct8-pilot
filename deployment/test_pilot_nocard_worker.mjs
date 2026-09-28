@@ -58,7 +58,14 @@ test("GitHub PKCE login, revocation, CSRF and signed forwarding", async () => {
     const callback = `${root}/auth/callback?state=${authorize.searchParams.get("state")}&code=reviewCode1`;
     assert.equal((await pilot.fetch(new Request(callback.replace("reviewCode1", "bad?"),
       { headers: { Cookie: startCookie } }), env)).status, 401);
-    const successful = await pilot.fetch(new Request(callback, { headers: { Cookie: startCookie } }), env);
+    const unexpectedIssuer = await pilot.fetch(new Request(`${callback}&iss=https%3A%2F%2Fevil.example`,
+      { headers: { Cookie: startCookie } }), env);
+    assert.equal(unexpectedIssuer.status, 401);
+    const duplicateIssuer = await pilot.fetch(new Request(`${callback}&iss=https%3A%2F%2Fgithub.com%2Flogin%2Foauth&iss=https%3A%2F%2Fgithub.com%2Flogin%2Foauth`,
+      { headers: { Cookie: startCookie } }), env);
+    assert.equal(duplicateIssuer.status, 401);
+    const successful = await pilot.fetch(new Request(`${callback}&iss=https%3A%2F%2Fgithub.com%2Flogin%2Foauth`,
+      { headers: { Cookie: startCookie } }), env);
     assert.equal(successful.status, 303);
     assert.equal(calls.length, 2);
     const session = successful.headers.getSetCookie().find(v => v.startsWith("__Host-CT8PilotSession="));

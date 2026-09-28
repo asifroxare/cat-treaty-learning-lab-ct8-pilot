@@ -135,7 +135,13 @@ async function callback(request, env, url, origin) {
   const state = await verifySigned(cookie(request, loginName), env.PILOT_LOGIN_KEY);
   const code = url.searchParams.get("code") ?? "";
   const received = url.searchParams.get("state") ?? "";
-  if (url.searchParams.size !== 2 || !state || typeof state !== "object" ||
+  const issuer = url.searchParams.get("iss");
+  if (url.searchParams.getAll("code").length !== 1 ||
+      url.searchParams.getAll("state").length !== 1 ||
+      url.searchParams.getAll("iss").length > 1 ||
+      url.searchParams.size !== (issuer === null ? 2 : 3) ||
+      (issuer !== null && issuer !== "https://github.com/login/oauth") ||
+      !state || typeof state !== "object" ||
       state.exp <= Math.floor(Date.now()/1000) || state.exp > Math.floor(Date.now()/1000)+300 ||
       !/^[A-Za-z0-9_-]{43}$/.test(state.verifier ?? "") ||
       !/^[A-Za-z0-9_-]{32}$/.test(received) || received !== state.state ||
