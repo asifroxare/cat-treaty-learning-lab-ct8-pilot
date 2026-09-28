@@ -119,7 +119,8 @@ def create_nocard_app(*, config: dict[str, str] | None = None) -> FastAPI:
         signature = headers.get("X-CT8-Assertion-Signature", "")
         claimed_digest = headers.get("X-CT8-Assertion-Digest", "")
         if (kid not in keys or uid not in allowed or not ID.fullmatch(uid) or
-                not NONCE.fullmatch(nonce) or not hmac.compare_digest(claimed_boot, boot) or
+                not NONCE.fullmatch(nonce) or not NONCE.fullmatch(claimed_boot) or
+                not hmac.compare_digest(claimed_boot, boot) or
                 not HEX.fullmatch(signature) or
                 not HEX.fullmatch(claimed_digest) or claimed_digest != digest or
                 not re.fullmatch(r"[0-9]{10}", timestamp)):

@@ -39,7 +39,7 @@ const stateByCode: Readonly<Record<CT6ProblemCode, ExecutionState>> = {
 
 export function executionStateForProblem(problem: CT6Problem): ExecutionState {
   if (problem.code === "CT8_PILOT_LIMIT") return "pilot_limit";
-  if (problem.code === "CT8_PILOT_AUTH") return "pilot_access";
+  if (problem.code === "CT8_PILOT_AUTH" || problem.code === "CT8_PRIVATE_AUTH") return "pilot_access";
   if (problem.code === "CT8_PILOT_BUSY") return "pilot_busy";
   if (problem.code === "CT8_PILOT_INPUT") return "schema_error";
   if (problem.code === "CT8_PILOT_CONTRACT") return "contract_blocked";

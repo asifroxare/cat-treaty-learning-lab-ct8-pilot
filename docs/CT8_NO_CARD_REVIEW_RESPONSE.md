@@ -1,5 +1,7 @@
 # CT8 no-card private tester: response to independent review of bbed083
 
+**Follow-up after independent review of 9f3e094:** Claude confirmed the boot-token restart proof and key rotation in local and real-process probes: code-level **PASS**. A malformed non-ASCII boot header could previously raise a server error; the verifier now checks the expected token shape before comparison, and a raw-header negative test returns 401. The frontend now maps `CT8_PRIVATE_AUTH` to its access state, and development test requirements include the old pilot's `cryptography` dependency. Local Linux full backend and frontend suites pass after these corrections. Live provider, browser, capacity and rollback gates remain open.
+
 **28 September 2026. Corrected local review candidate. Render remains Suspended and Auto-Deploy Off. No provider configuration, deployment, or tester invitation is approved by this packet.** The old `CT8_NO_CARD_CODE_REVIEW.md` records evidence for the superseded commit; the tests below apply to this revision.
 
 ## Corrections made

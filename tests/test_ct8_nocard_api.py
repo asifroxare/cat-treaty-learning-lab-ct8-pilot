@@ -75,6 +75,12 @@ def test_no_unsigned_spoofed_or_replayed_work_reaches_child(monkeypatch):
         assert client.post(path, content=raw, headers={"Cookie": "__Host-CT8PilotSession=fake"}).status_code == 401
         assert client.post(path, content=raw, headers=signed(path, raw, key="not-the-worker-key")).status_code == 401
         assert client.post(path, content=raw, headers=signed(path, raw, uid="98765")).status_code == 401
+        malformed_boot = signed(path, raw)
+        malformed_boot.pop("X-CT8-Assertion-Boot")
+        malformed_headers = [(name.encode("ascii"), value.encode("ascii"))
+                             for name, value in malformed_boot.items()]
+        malformed_headers.append((b"X-CT8-Assertion-Boot", b"\xff" * 32))
+        assert client.post(path, content=raw, headers=malformed_headers).status_code == 401
         assert client.post(path, content=raw, headers=signed(path, raw, timestamp=int(time.time())-60)).status_code == 401
         same = signed(path, raw)
         assert client.post(path, content=raw+b" ", headers=same).status_code == 401
